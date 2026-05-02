@@ -1,0 +1,294 @@
+package com.tenebris.health_tracker.ui.progress
+
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.tenebris.health_tracker.data.model.WeightEntry
+import com.tenebris.health_tracker.ui.components.DotMatrixHeader
+import com.tenebris.health_tracker.ui.components.NothingCard
+import com.tenebris.health_tracker.ui.theme.NType82
+import com.tenebris.health_tracker.ui.theme.NothingRed
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProgressScreen(viewModel: ProgressViewModel) {
+    val state by viewModel.state.collectAsState()
+    var showSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showSheet = true },
+                containerColor = MaterialTheme.colorScheme.tertiary, // Nothing Red
+                contentColor = Color.White,
+                shape = CircleShape,
+                modifier = Modifier.padding(bottom = 80.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add weight")
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            DotMatrixHeader(text = "Progress")
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Removed card background
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                if (state.weightEntries.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No weight data yet", color = Color.Gray)
+                    }
+                } else {
+                    WeightGraph(entries = state.weightEntries, modifier = Modifier.fillMaxSize())
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Weight history", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
+                items(state.weightEntries.reversed()) { entry ->
+                    WeightHistoryCard(entry = entry, onDelete = { viewModel.deleteWeight(entry) })
+                }
+            }
+        }
+    }
+
+    if (showSheet) {
+        AddWeightBottomSheet(
+            onDismiss = { showSheet = false },
+            onAdd = { 
+                viewModel.addWeight(it)
+                showSheet = false
+            },
+            sheetState = sheetState
+        )
+    }
+}
+
+@Composable
+fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
+    if (entries.isEmpty()) return
+
+    val weights = entries.map { it.weight }
+    val maxWeight = weights.maxOrNull() ?: 100f
+    val minWeight = weights.minOrNull() ?: 0f
+    
+    val baseline = (minWeight - 5f).coerceAtLeast(0f)
+    val topPadding = maxWeight + 5f
+    val finalRange = (topPadding - baseline).coerceAtLeast(1f)
+
+    val labelFormatter = DateTimeFormatter.ofPattern("MM/dd")
+
+    Canvas(modifier = modifier) {
+        val width = size.width
+        val height = size.height
+        
+        val xAxisPadding = 45.dp.toPx()
+        val yAxisPadding = 30.dp.toPx()
+        
+        val graphWidth = width - xAxisPadding
+        val graphHeight = height - yAxisPadding
+
+        // Draw Axes
+        drawLine(
+            color = Color.Gray,
+            start = Offset(xAxisPadding, 0f),
+            end = Offset(xAxisPadding, graphHeight),
+            strokeWidth = 1.dp.toPx()
+        )
+        drawLine(
+            color = Color.Gray,
+            start = Offset(xAxisPadding, graphHeight),
+            end = Offset(width, graphHeight),
+            strokeWidth = 1.dp.toPx()
+        )
+
+        val spacing = if (entries.size > 1) graphWidth / (entries.size - 1) else graphWidth / 2
+
+        val points = entries.mapIndexed { index, entry ->
+            val x = xAxisPadding + (index * spacing)
+            val y = graphHeight - ((entry.weight - baseline) / finalRange * graphHeight)
+            Offset(x, y)
+        }
+
+        // Labels for Y-Axis
+        val yLabelCount = 4
+        for (i in 0..yLabelCount) {
+            val yValue = baseline + (finalRange * i / yLabelCount)
+            val yPos = graphHeight - (i.toFloat() / yLabelCount * graphHeight)
+            drawContext.canvas.nativeCanvas.drawText(
+                String.format(Locale.getDefault(), "%.0f", yValue),
+                5.dp.toPx(),
+                yPos + 5.dp.toPx(),
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.GRAY
+                    textSize = 10.sp.toPx()
+                    textAlign = android.graphics.Paint.Align.LEFT
+                }
+            )
+        }
+
+        // Path and Points
+        val path = Path().apply {
+            if (points.isNotEmpty()) {
+                moveTo(points[0].x, points[0].y)
+                for (i in 1 until points.size) {
+                    lineTo(points[i].x, points[i].y)
+                }
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = Color.White.copy(alpha = 0.8f),
+            style = Stroke(width = 2.dp.toPx())
+        )
+
+        points.forEachIndexed { index, point ->
+            drawCircle(
+                color = NothingRed,
+                radius = 4.dp.toPx(),
+                center = point
+            )
+            
+            // X-Axis Date Labels
+            if (entries.size < 7 || index % (entries.size / 4).coerceAtLeast(1) == 0) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    LocalDate.parse(entries[index].date).format(labelFormatter),
+                    point.x - 15.dp.toPx(),
+                    height - 5.dp.toPx(),
+                    android.graphics.Paint().apply {
+                        color = android.graphics.Color.GRAY
+                        textSize = 10.sp.toPx()
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WeightHistoryCard(entry: WeightEntry, onDelete: () -> Unit) {
+    val date = LocalDate.parse(entry.date)
+    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+
+    NothingCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(20.dp).fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = date.format(formatter),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = NType82
+                    )
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${entry.weight} kg",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = NType82,
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddWeightBottomSheet(
+    onDismiss: () -> Unit,
+    onAdd: (Float) -> Unit,
+    sheetState: SheetState
+) {
+    var weight by remember { mutableStateOf("") }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color(0xFF0A0A0A),
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(bottom = 32.dp, top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                "Log weight",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = NType82,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+
+            OutlinedTextField(
+                value = weight,
+                onValueChange = { weight = it },
+                label = { Text("Weight (kg)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Button(
+                onClick = {
+                    weight.toFloatOrNull()?.let { onAdd(it) }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+            ) {
+                Text("Add", color = Color.White)
+            }
+        }
+    }
+}
