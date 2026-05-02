@@ -33,6 +33,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tenebris.health_tracker.data.local.AppDatabase
 import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.data.remote.OpenFoodFactsApi
+import com.tenebris.health_tracker.data.repository.FoodRepository
 import com.tenebris.health_tracker.ui.dashboard.DashboardScreen
 import com.tenebris.health_tracker.ui.dashboard.DashboardViewModel
 import com.tenebris.health_tracker.ui.onboarding.OnboardingScreen
@@ -43,6 +45,12 @@ import com.tenebris.health_tracker.ui.settings.SettingsScreen
 import com.tenebris.health_tracker.ui.settings.SettingsViewModel
 import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
 import com.tenebris.health_tracker.ui.theme.NothingRed
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import kotlinx.serialization.json.Json
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import okhttp3.MediaType.Companion.toMediaType
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,16 +61,37 @@ class MainActivity : ComponentActivity() {
         val db = AppDatabase.getDatabase(this)
         val userPrefs = UserPreferences(this)
         
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+        val client = OkHttpClient.Builder()
+            .addInterceptor(logging)
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", "HealthTrackerApp - Android - Version 1.0 - https://github.com/tenebris/healthtracker")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+
+        val json = Json { ignoreUnknownKeys = true }
+        val api = Retrofit.Builder()
+            .baseUrl(OpenFoodFactsApi.BASE_URL)
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create(OpenFoodFactsApi::class.java)
+
+        val foodRepository = FoodRepository(db.foodDao(), db.cachedProductDao(), api)
+        
         setContent {
             HealthTrackerTheme {
-                HealthTrackerApp(db, userPrefs)
+                HealthTrackerApp(db, userPrefs, foodRepository)
             }
         }
     }
 }
 
 @Composable
-fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences) {
+fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences, foodRepository: FoodRepository) {
     val navController = rememberNavController()
     val isOnboarded by userPrefs.isOnboarded.collectAsState(initial = null)
 
@@ -86,13 +115,13 @@ fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences) {
             OnboardingScreen(onboardingViewModel)
         }
         composable("main") {
-            MainTabScreen(db, userPrefs)
+            MainTabScreen(db, userPrefs, foodRepository)
         }
     }
 }
 
 @Composable
-fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences) {
+fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences, foodRepository: FoodRepository) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -116,7 +145,7 @@ fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences) {
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return DashboardViewModel(db.foodDao(), db.weightDao(), userPrefs) as T
+                                return DashboardViewModel(foodRepository, db.weightDao(), userPrefs) as T
                             }
                         }
                     )

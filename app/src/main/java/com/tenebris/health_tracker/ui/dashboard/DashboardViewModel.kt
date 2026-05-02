@@ -2,11 +2,10 @@ package com.tenebris.health_tracker.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tenebris.health_tracker.data.local.FoodDao
-import com.tenebris.health_tracker.data.local.WeightDao
 import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.data.repository.FoodRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,14 +20,24 @@ data class DashboardState(
     val targetProtein: Int = 150
 )
 
+sealed class ScannerState {
+    object Idle : ScannerState()
+    object Loading : ScannerState()
+    data class Success(val name: String, val calories100g: Int, val protein100g: Int) : ScannerState()
+    data class Error(val message: String) : ScannerState()
+}
+
 class DashboardViewModel(
-    private val foodDao: FoodDao,
-    private val weightDao: WeightDao,
+    private val repository: FoodRepository,
+    private val weightDao: com.tenebris.health_tracker.data.local.WeightDao,
     private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
+
+    private val _scannerState = MutableStateFlow<ScannerState>(ScannerState.Idle)
+    val scannerState: StateFlow<ScannerState> = _scannerState
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<DashboardState> = combine(
@@ -71,7 +80,7 @@ class DashboardViewModel(
         
         Triple(date, adjustedTarget.toInt(), proteinTarget)
     }.flatMapLatest { (date, targetCal, targetProt) ->
-        foodDao.getEntriesByDate(date.toString()).map { entries ->
+        repository.getEntriesByDate(date).map { entries ->
             DashboardState(
                 selectedDate = date,
                 entries = entries,
@@ -89,7 +98,7 @@ class DashboardViewModel(
 
     fun addFood(name: String, kcal: Int, protein: Int) {
         viewModelScope.launch {
-            foodDao.insertEntry(
+            repository.addFoodEntry(
                 FoodEntry(
                     name = name,
                     calories = kcal,
@@ -97,12 +106,36 @@ class DashboardViewModel(
                     date = _selectedDate.value.toString()
                 )
             )
+            _scannerState.value = ScannerState.Idle
         }
     }
 
     fun deleteFood(entry: FoodEntry) {
         viewModelScope.launch {
-            foodDao.deleteEntry(entry)
+            repository.deleteFoodEntry(entry)
         }
+    }
+
+    fun onBarcodeScanned(barcode: String) {
+        if (_scannerState.value is ScannerState.Loading) return
+        
+        _scannerState.value = ScannerState.Loading
+        viewModelScope.launch {
+            repository.getProductByBarcode(barcode)
+                .onSuccess { product ->
+                    _scannerState.value = ScannerState.Success(
+                        name = product.name,
+                        calories100g = product.calories100g,
+                        protein100g = product.protein100g
+                    )
+                }
+                .onFailure { error ->
+                    _scannerState.value = ScannerState.Error(error.message ?: "Unknown error")
+                }
+        }
+    }
+
+    fun resetScanner() {
+        _scannerState.value = ScannerState.Idle
     }
 }
