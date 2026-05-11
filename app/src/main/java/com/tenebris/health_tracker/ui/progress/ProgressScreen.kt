@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -116,92 +117,100 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
 
     val labelFormatter = DateTimeFormatter.ofPattern("MM/dd")
 
-    Canvas(modifier = modifier) {
-        val width = size.width
-        val height = size.height
-        
-        val xAxisPadding = 45.dp.toPx()
-        val yAxisPadding = 30.dp.toPx()
-        
-        val graphWidth = width - xAxisPadding
-        val graphHeight = height - yAxisPadding
-
-        // Draw Axes
-        drawLine(
-            color = Color.Gray,
-            start = Offset(xAxisPadding, 0f),
-            end = Offset(xAxisPadding, graphHeight),
-            strokeWidth = 1.dp.toPx()
-        )
-        drawLine(
-            color = Color.Gray,
-            start = Offset(xAxisPadding, graphHeight),
-            end = Offset(width, graphHeight),
-            strokeWidth = 1.dp.toPx()
-        )
-
-        val spacing = if (entries.size > 1) graphWidth / (entries.size - 1) else graphWidth / 2
-
-        val points = entries.mapIndexed { index, entry ->
-            val x = xAxisPadding + (index * spacing)
-            val y = graphHeight - ((entry.weight - baseline) / finalRange * graphHeight)
-            Offset(x, y)
-        }
-
-        // Labels for Y-Axis
-        val yLabelCount = 4
-        for (i in 0..yLabelCount) {
-            val yValue = baseline + (finalRange * i / yLabelCount)
-            val yPos = graphHeight - (i.toFloat() / yLabelCount * graphHeight)
-            drawContext.canvas.nativeCanvas.drawText(
-                String.format(Locale.getDefault(), "%.0f", yValue),
-                5.dp.toPx(),
-                yPos + 5.dp.toPx(),
-                android.graphics.Paint().apply {
+    Spacer(
+        modifier = modifier
+            .drawWithCache {
+                val xAxisPadding = 45.dp.toPx()
+                val yAxisPadding = 30.dp.toPx()
+                val strokeWidth1dp = 1.dp.toPx()
+                val strokeWidth2dp = 2.dp.toPx()
+                val pointRadius = 4.dp.toPx()
+                val labelTextSize = 10.sp.toPx()
+                
+                val textPaint = android.graphics.Paint().apply {
                     color = android.graphics.Color.GRAY
-                    textSize = 10.sp.toPx()
-                    textAlign = android.graphics.Paint.Align.LEFT
+                    textSize = labelTextSize
                 }
-            )
-        }
+                
+                onDrawBehind {
+                    val width = size.width
+                    val height = size.height
+                    val graphWidth = width - xAxisPadding
+                    val graphHeight = height - yAxisPadding
 
-        // Path and Points
-        val path = Path().apply {
-            if (points.isNotEmpty()) {
-                moveTo(points[0].x, points[0].y)
-                for (i in 1 until points.size) {
-                    lineTo(points[i].x, points[i].y)
-                }
-            }
-        }
+                    // Draw Axes
+                    drawLine(
+                        color = Color.Gray,
+                        start = Offset(xAxisPadding, 0f),
+                        end = Offset(xAxisPadding, graphHeight),
+                        strokeWidth = strokeWidth1dp
+                    )
+                    drawLine(
+                        color = Color.Gray,
+                        start = Offset(xAxisPadding, graphHeight),
+                        end = Offset(width, graphHeight),
+                        strokeWidth = strokeWidth1dp
+                    )
 
-        drawPath(
-            path = path,
-            color = Color.White.copy(alpha = 0.8f),
-            style = Stroke(width = 2.dp.toPx())
-        )
+                    if (entries.isEmpty()) return@onDrawBehind
 
-        points.forEachIndexed { index, point ->
-            drawCircle(
-                color = NothingRed,
-                radius = 4.dp.toPx(),
-                center = point
-            )
-            
-            // X-Axis Date Labels
-            if (entries.size < 7 || index % (entries.size / 4).coerceAtLeast(1) == 0) {
-                drawContext.canvas.nativeCanvas.drawText(
-                    LocalDate.parse(entries[index].date).format(labelFormatter),
-                    point.x - 15.dp.toPx(),
-                    height - 5.dp.toPx(),
-                    android.graphics.Paint().apply {
-                        color = android.graphics.Color.GRAY
-                        textSize = 10.sp.toPx()
+                    val spacing = if (entries.size > 1) graphWidth / (entries.size - 1) else graphWidth / 2
+
+                    val points = entries.mapIndexed { index, entry ->
+                        val x = xAxisPadding + (index * spacing)
+                        val y = graphHeight - ((entry.weight - baseline) / finalRange * graphHeight)
+                        Offset(x, y)
                     }
-                )
+
+                    // Labels for Y-Axis
+                    val yLabelCount = 4
+                    for (i in 0..yLabelCount) {
+                        val yValue = baseline + (finalRange * i / yLabelCount)
+                        val yPos = graphHeight - (i.toFloat() / yLabelCount * graphHeight)
+                        drawContext.canvas.nativeCanvas.drawText(
+                            String.format(Locale.getDefault(), "%.0f", yValue),
+                            5.dp.toPx(),
+                            yPos + 5.dp.toPx(),
+                            textPaint.apply { textAlign = android.graphics.Paint.Align.LEFT }
+                        )
+                    }
+
+                    // Path and Points
+                    val path = Path().apply {
+                        if (points.isNotEmpty()) {
+                            moveTo(points[0].x, points[0].y)
+                            for (i in 1 until points.size) {
+                                lineTo(points[i].x, points[i].y)
+                            }
+                        }
+                    }
+
+                    drawPath(
+                        path = path,
+                        color = Color.White.copy(alpha = 0.8f),
+                        style = Stroke(width = strokeWidth2dp)
+                    )
+
+                    points.forEachIndexed { index, point ->
+                        drawCircle(
+                            color = NothingRed,
+                            radius = pointRadius,
+                            center = point
+                        )
+                        
+                        // X-Axis Date Labels
+                        if (entries.size < 7 || index % (entries.size / 4).coerceAtLeast(1) == 0) {
+                            drawContext.canvas.nativeCanvas.drawText(
+                                LocalDate.parse(entries[index].date).format(labelFormatter),
+                                point.x - 15.dp.toPx(),
+                                height - 5.dp.toPx(),
+                                textPaint.apply { textAlign = android.graphics.Paint.Align.CENTER }
+                            )
+                        }
+                    }
+                }
             }
-        }
-    }
+    )
 }
 
 @Composable

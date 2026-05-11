@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -101,39 +102,51 @@ fun BarcodeScannerView(
 
 @Composable
 fun ScannerOverlay() {
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-        val boxSize = 250.dp.toPx()
-        
-        val left = (canvasWidth - boxSize) / 2
-        val top = (canvasHeight - boxSize) / 2
-        
-        // Dim outer area
-        drawRect(
-            color = Color.Black.copy(alpha = 0.6f),
-            size = size
-        )
+    Spacer(
+        modifier = Modifier
+            .fillMaxSize()
+            .drawWithCache {
+                val boxSize = 250.dp.toPx()
+                val cornerRadius = CornerRadius(16.dp.toPx())
+                val strokeWidth = 2.dp.toPx()
+                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 10f), 0f)
+                val backgroundDim = Color.Black.copy(alpha = 0.6f)
+                
+                onDrawBehind {
+                    val canvasWidth = size.width
+                    val canvasHeight = size.height
+                    val left = (canvasWidth - boxSize) / 2
+                    val top = (canvasHeight - boxSize) / 2
+                    val viewFinderSize = androidx.compose.ui.geometry.Size(boxSize, boxSize)
+                    val viewFinderOffset = Offset(left, top)
 
-        // Clear square viewfinder
-        drawRoundRect(
-            color = Color.Transparent,
-            topLeft = Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(boxSize, boxSize),
-            cornerRadius = CornerRadius(16.dp.toPx()),
-            blendMode = BlendMode.Clear
-        )
+                    // Dim outer area
+                    drawRect(
+                        color = backgroundDim,
+                        size = size
+                    )
 
-        // Dotted border (Nothing style)
-        drawRoundRect(
-            color = Color.White,
-            topLeft = Offset(left, top),
-            size = androidx.compose.ui.geometry.Size(boxSize, boxSize),
-            cornerRadius = CornerRadius(16.dp.toPx()),
-            style = Stroke(
-                width = 2.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 10f), 0f)
-            )
-        )
-    }
+                    // Clear square viewfinder
+                    drawRoundRect(
+                        color = Color.Transparent,
+                        topLeft = viewFinderOffset,
+                        size = viewFinderSize,
+                        cornerRadius = cornerRadius,
+                        blendMode = BlendMode.Clear
+                    )
+
+                    // Dotted border (Nothing style)
+                    drawRoundRect(
+                        color = Color.White,
+                        topLeft = viewFinderOffset,
+                        size = viewFinderSize,
+                        cornerRadius = cornerRadius,
+                        style = Stroke(
+                            width = strokeWidth,
+                            pathEffect = dashEffect
+                        )
+                    )
+                }
+            }
+    )
 }

@@ -2,6 +2,12 @@ package com.tenebris.health_tracker.ui.dashboard
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -253,7 +259,8 @@ fun AddFoodBottomSheet(
             modifier = Modifier
                 .padding(24.dp)
                 .fillMaxWidth()
-                .padding(bottom = 32.dp, top = 16.dp),
+                .padding(bottom = 32.dp, top = 16.dp)
+                .animateContentSize(animationSpec = tween(500)),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
@@ -284,93 +291,119 @@ fun AddFoodBottomSheet(
                 }
             }
 
-            if (showScanner) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .background(Color.Black, RoundedCornerShape(16.dp))
-                ) {
-                    BarcodeScannerView(
-                        onBarcodeScanned = onBarcodeScanned,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-                
-                Button(
-                    onClick = { showScanner = false },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                ) {
-                    Text("Cancel Scan", color = Color.White)
-                }
-            } else {
-                if (scannerState is ScannerState.Loading) {
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        PulsingDotMatrixLoader()
+            AnimatedContent(
+                targetState = showScanner,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(300)) togetherWith
+                            fadeOut(animationSpec = tween(300))
+                },
+                label = "scannerTransition"
+            ) { targetShowScanner ->
+                if (targetShowScanner) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .background(Color.Black, RoundedCornerShape(16.dp))
+                        ) {
+                            BarcodeScannerView(
+                                onBarcodeScanned = onBarcodeScanned,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        
+                        Button(
+                            onClick = { showScanner = false },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        ) {
+                            Text("Cancel Scan", color = Color.White)
+                        }
                     }
-                }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        AnimatedContent(
+                            targetState = scannerState,
+                            transitionSpec = {
+                                fadeIn() togetherWith fadeOut()
+                            },
+                            label = "scannerStateTransition"
+                        ) { state ->
+                            when (state) {
+                                is ScannerState.Loading -> {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        PulsingDotMatrixLoader()
+                                    }
+                                }
+                                is ScannerState.Error -> {
+                                    Text(
+                                        text = state.message,
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                else -> {}
+                            }
+                        }
 
-                if (scannerState is ScannerState.Error) {
-                    Text(
-                        text = scannerState.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            OutlinedTextField(
+                                value = weightInput,
+                                onValueChange = { weightInput = it },
+                                label = { Text("Weight (g)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            OutlinedTextField(
+                                value = kcalInput,
+                                onValueChange = { kcalInput = it },
+                                label = { Text("kcal") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            OutlinedTextField(
+                                value = proteinInput,
+                                onValueChange = { proteinInput = it },
+                                label = { Text("Protein (g)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                        }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
-                        value = weightInput,
-                        onValueChange = { weightInput = it },
-                        label = { Text("Weight (g)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    OutlinedTextField(
-                        value = kcalInput,
-                        onValueChange = { kcalInput = it },
-                        label = { Text("kcal") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    OutlinedTextField(
-                        value = proteinInput,
-                        onValueChange = { proteinInput = it },
-                        label = { Text("Protein (g)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-
-                Button(
-                    onClick = {
-                        val k = kcalInput.toIntOrNull() ?: 0
-                        val p = proteinInput.toIntOrNull() ?: 0
-                        onAdd(name, k, p)
-                    },
-                    enabled = isAddEnabled,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = NothingRed,
-                        disabledContainerColor = Color.DarkGray
-                    )
-                ) {
-                    Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
+                        Button(
+                            onClick = {
+                                val k = kcalInput.toIntOrNull() ?: 0
+                                val p = proteinInput.toIntOrNull() ?: 0
+                                onAdd(name, k, p)
+                            },
+                            enabled = isAddEnabled,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = NothingRed,
+                                disabledContainerColor = Color.DarkGray
+                            )
+                        ) {
+                            Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
+                        }
+                    }
                 }
             }
         }

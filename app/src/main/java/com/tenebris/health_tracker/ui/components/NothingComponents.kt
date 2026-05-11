@@ -16,13 +16,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -69,6 +69,18 @@ fun TachometerGauge(
     val colorSecondary = MaterialTheme.colorScheme.secondary
     val colorTertiary = MaterialTheme.colorScheme.tertiary // NothingRed
 
+    // Animate progress changes smoothly
+    val animatedCalories = animateFloatAsState(
+        targetValue = caloriesProgress.coerceIn(0f, 1f),
+        animationSpec = tween(1000, easing = FastOutSlowInEasing),
+        label = "caloriesProgress"
+    )
+    val animatedProtein = animateFloatAsState(
+        targetValue = proteinProgress.coerceIn(0f, 1f),
+        animationSpec = tween(1000, easing = FastOutSlowInEasing),
+        label = "proteinProgress"
+    )
+
     Box(contentAlignment = Alignment.Center, modifier = modifier) {
         Spacer(
             modifier = Modifier
@@ -78,6 +90,9 @@ fun TachometerGauge(
                     val innerStrokeWidth = 12.dp.toPx()
                     val backgroundArcColor = colorSecondary.copy(alpha = 0.1f)
                     
+                    val innerArcSize = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx())
+                    val innerArcOffset = Offset(30.dp.toPx(), 30.dp.toPx())
+
                     onDrawBehind {
                         // Background arcs
                         drawArc(
@@ -86,7 +101,7 @@ fun TachometerGauge(
                             sweepAngle = 270f,
                             useCenter = false,
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                            size = Size(size.width, size.height)
+                            size = size
                         )
 
                         drawArc(
@@ -95,28 +110,28 @@ fun TachometerGauge(
                             sweepAngle = 270f,
                             useCenter = false,
                             style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                            size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
-                            topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
+                            size = innerArcSize,
+                            topLeft = innerArcOffset
                         )
 
-                        // Progress arcs
+                        // Progress arcs - Using .value inside onDrawBehind to avoid recomposition
                         drawArc(
                             color = colorPrimary,
                             startAngle = 135f,
-                            sweepAngle = 270f * caloriesProgress.coerceIn(0f, 1f),
+                            sweepAngle = 270f * animatedCalories.value,
                             useCenter = false,
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                            size = Size(size.width, size.height)
+                            size = size
                         )
 
                         drawArc(
                             color = colorTertiary,
                             startAngle = 135f,
-                            sweepAngle = 270f * proteinProgress.coerceIn(0f, 1f),
+                            sweepAngle = 270f * animatedProtein.value,
                             useCenter = false,
                             style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                            size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
-                            topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
+                            size = innerArcSize,
+                            topLeft = innerArcOffset
                         )
                     }
                 }
@@ -197,8 +212,8 @@ fun DatePickerTimeline(
 
 @Composable
 fun PulsingDotMatrixLoader(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val alphaAnim by infiniteTransition.animateFloat(
+    val infiniteTransition = rememberInfiniteTransition(label = "loader")
+    val alphaAnim = infiniteTransition.animateFloat(
         initialValue = 0.2f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
@@ -216,7 +231,8 @@ fun PulsingDotMatrixLoader(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .size(6.dp)
-                    .alpha(alphaAnim)
+                    // Use graphicsLayer to avoid recomposition on every frame
+                    .graphicsLayer { this.alpha = alphaAnim.value }
                     .background(Color.White, CircleShape)
             )
         }
