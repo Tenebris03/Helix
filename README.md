@@ -1,4 +1,4 @@
-# HealthTracker 🔴
+# Calorie-Tracker 🔴
 
 A minimalist, high-performance health and nutrition tracker inspired by the **Nothing OS** aesthetic. Designed to be "snappy," tactile, and distraction-free.
 
