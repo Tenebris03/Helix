@@ -16,6 +16,9 @@ interface WeightDao {
     @Query("SELECT * FROM weight_entries ORDER BY date DESC, id DESC LIMIT 1")
     fun getLatestWeightEntry(): Flow<WeightEntry?>
 
+    @Query("SELECT * FROM weight_entries WHERE date <= :date ORDER BY date DESC, id DESC LIMIT 1")
+    fun getWeightAtDate(date: String): Flow<WeightEntry?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWeight(entry: WeightEntry)
 

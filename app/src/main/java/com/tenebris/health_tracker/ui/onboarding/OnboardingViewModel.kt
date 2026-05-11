@@ -2,7 +2,9 @@ package com.tenebris.health_tracker.ui.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tenebris.health_tracker.data.local.ProfileDao
 import com.tenebris.health_tracker.data.local.WeightDao
+import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +24,8 @@ data class OnboardingState(
 
 class OnboardingViewModel(
     private val userPreferences: UserPreferences,
-    private val weightDao: WeightDao
+    private val weightDao: WeightDao,
+    private val profileDao: ProfileDao
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingState())
@@ -52,10 +55,23 @@ class OnboardingViewModel(
         val proteinTarget = (weightVal * 2.0).toInt()
 
         viewModelScope.launch {
+            val date = LocalDate.now().toString()
             weightDao.insertWeight(
                 WeightEntry(
                     weight = weightVal.toFloat(),
-                    date = LocalDate.now().toString()
+                    date = date
+                )
+            )
+            profileDao.insertProfile(
+                ProfileEntry(
+                    date = date,
+                    activityLevel = s.activityLevel,
+                    height = heightVal.toInt(),
+                    age = ageVal,
+                    gender = s.gender,
+                    goal = s.goal,
+                    offset = s.offset,
+                    proteinTarget = proteinTarget
                 )
             )
             userPreferences.saveOnboardingData(

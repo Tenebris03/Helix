@@ -53,14 +53,10 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import okhttp3.MediaType.Companion.toMediaType
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        
-        val db = AppDatabase.getDatabase(this)
-        val userPrefs = UserPreferences(this)
-        
+    private val db by lazy { AppDatabase.getDatabase(this) }
+    private val userPrefs by lazy { UserPreferences(this) }
+    
+    private val api by lazy {
         val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
         val client = OkHttpClient.Builder()
             .addInterceptor(logging)
@@ -73,14 +69,22 @@ class MainActivity : ComponentActivity() {
             .build()
 
         val json = Json { ignoreUnknownKeys = true }
-        val api = Retrofit.Builder()
+        Retrofit.Builder()
             .baseUrl(OpenFoodFactsApi.BASE_URL)
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(OpenFoodFactsApi::class.java)
+    }
 
-        val foodRepository = FoodRepository(db.foodDao(), db.cachedProductDao(), api)
+    private val foodRepository by lazy { 
+        FoodRepository(db.foodDao(), db.cachedProductDao(), api) 
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         
         setContent {
             HealthTrackerTheme {
@@ -108,7 +112,7 @@ fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences, foodRepository
                 factory = object : ViewModelProvider.Factory {
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         @Suppress("UNCHECKED_CAST")
-                        return OnboardingViewModel(userPrefs, db.weightDao()) as T
+                        return OnboardingViewModel(userPrefs, db.weightDao(), db.profileDao()) as T
                     }
                 }
             )
@@ -145,7 +149,7 @@ fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences, foodRepository: F
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return DashboardViewModel(foodRepository, db.weightDao(), userPrefs) as T
+                                return DashboardViewModel(foodRepository, db.weightDao(), db.profileDao(), userPrefs) as T
                             }
                         }
                     )
@@ -167,7 +171,7 @@ fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences, foodRepository: F
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return SettingsViewModel(userPrefs, db.weightDao()) as T
+                                return SettingsViewModel(userPrefs, db.weightDao(), db.profileDao()) as T
                             }
                         }
                     )

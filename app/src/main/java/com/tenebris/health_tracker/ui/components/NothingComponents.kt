@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -69,50 +70,57 @@ fun TachometerGauge(
     val colorTertiary = MaterialTheme.colorScheme.tertiary // NothingRed
 
     Box(contentAlignment = Alignment.Center, modifier = modifier) {
-        Canvas(modifier = Modifier.size(240.dp)) {
-            val strokeWidth = 20.dp.toPx()
-            val innerStrokeWidth = 12.dp.toPx()
-            
-            // Background arcs
-            drawArc(
-                color = colorSecondary.copy(alpha = 0.1f),
-                startAngle = 135f,
-                sweepAngle = 270f,
-                useCenter = false,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width, size.height)
-            )
+        Spacer(
+            modifier = Modifier
+                .size(240.dp)
+                .drawWithCache {
+                    val strokeWidth = 20.dp.toPx()
+                    val innerStrokeWidth = 12.dp.toPx()
+                    val backgroundArcColor = colorSecondary.copy(alpha = 0.1f)
+                    
+                    onDrawBehind {
+                        // Background arcs
+                        drawArc(
+                            color = backgroundArcColor,
+                            startAngle = 135f,
+                            sweepAngle = 270f,
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                            size = Size(size.width, size.height)
+                        )
 
-            drawArc(
-                color = colorSecondary.copy(alpha = 0.1f),
-                startAngle = 135f,
-                sweepAngle = 270f,
-                useCenter = false,
-                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
-                topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
-            )
+                        drawArc(
+                            color = backgroundArcColor,
+                            startAngle = 135f,
+                            sweepAngle = 270f,
+                            useCenter = false,
+                            style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
+                            size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
+                            topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
+                        )
 
-            // Progress arcs
-            drawArc(
-                color = colorPrimary,
-                startAngle = 135f,
-                sweepAngle = 270f * caloriesProgress.coerceIn(0f, 1f),
-                useCenter = false,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width, size.height)
-            )
+                        // Progress arcs
+                        drawArc(
+                            color = colorPrimary,
+                            startAngle = 135f,
+                            sweepAngle = 270f * caloriesProgress.coerceIn(0f, 1f),
+                            useCenter = false,
+                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                            size = Size(size.width, size.height)
+                        )
 
-            drawArc(
-                color = colorTertiary,
-                startAngle = 135f,
-                sweepAngle = 270f * proteinProgress.coerceIn(0f, 1f),
-                useCenter = false,
-                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
-                topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
-            )
-        }
+                        drawArc(
+                            color = colorTertiary,
+                            startAngle = 135f,
+                            sweepAngle = 270f * proteinProgress.coerceIn(0f, 1f),
+                            useCenter = false,
+                            style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
+                            size = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx()),
+                            topLeft = Offset(30.dp.toPx(), 30.dp.toPx())
+                        )
+                    }
+                }
+        )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(

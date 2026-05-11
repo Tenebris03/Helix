@@ -3,7 +3,9 @@ package com.tenebris.health_tracker.ui.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tenebris.health_tracker.data.local.ProfileDao
 import com.tenebris.health_tracker.data.local.WeightDao
+import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import kotlinx.coroutines.flow.*
@@ -26,7 +28,8 @@ data class SettingsState(
 
 class SettingsViewModel(
     private val userPreferences: UserPreferences,
-    private val weightDao: WeightDao
+    private val weightDao: WeightDao,
+    private val profileDao: ProfileDao
 ) : ViewModel() {
 
     val state: StateFlow<SettingsState> = combine(
@@ -80,6 +83,18 @@ class SettingsViewModel(
         height: Int
     ) {
         viewModelScope.launch {
+            profileDao.insertProfile(
+                ProfileEntry(
+                    date = java.time.LocalDate.now().toString(),
+                    activityLevel = activityLevel,
+                    height = height,
+                    age = age,
+                    gender = gender,
+                    goal = goal,
+                    offset = offset,
+                    proteinTarget = proteinTarget
+                )
+            )
             userPreferences.saveOnboardingData(bmr, goal, offset, proteinTarget, activityLevel, gender, age, height)
         }
     }

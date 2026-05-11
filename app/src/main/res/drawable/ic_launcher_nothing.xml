@@ -4,48 +4,49 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Perfectly Symmetrical Dot-Matrix Heart -->
-    <!-- Grid: 7 columns, centered at x=54 -->
-    <!-- Spacing: 10 units horizontally, 10 units vertically -->
-    <!-- Dot radius: 3.5 -->
+    <!-- Vertical Pillar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52.5,32 L55.5,32 L55.5,72 L52.5,72 Z" />
 
-    <!-- Row 1: 4 dots (y=29) -->
-    <path android:fillColor="#000000" android:pathData="M37.5,29a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" /> <!-- 54-20+3.5 -->
-    <path android:fillColor="#000000" android:pathData="M47.5,29a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" /> <!-- 54-10+3.5 -->
-    <path android:fillColor="#000000" android:pathData="M67.5,29a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" /> <!-- 54+10+3.5 -->
-    <path android:fillColor="#000000" android:pathData="M77.5,29a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" /> <!-- 54+20+3.5 -->
+    <!-- Horizontal Bar with rounded ends -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,36 L78,36 Q81,36 81,38 Q81,40 78,40 L30,40 Q27,40 27,38 Q27,36 30,36 Z" />
 
-    <!-- Row 2: 7 dots (y=39) -->
-    <path android:fillColor="#000000" android:pathData="M27.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M37.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M47.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M57.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M67.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M77.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M87.5,39a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
+    <!-- Top decoration of Pillar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M51,30 L57,30 L57,33 L51,33 Z" />
 
-    <!-- Row 3: 7 dots (y=49) -->
-    <path android:fillColor="#000000" android:pathData="M27.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M37.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M47.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M57.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M67.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M77.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M87.5,49a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
+    <!-- Base -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,72 L64,72 L64,75 L44,75 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,75 L70,75 L70,78 L38,78 Z" />
 
-    <!-- Row 4: 5 dots (y=59) -->
-    <path android:fillColor="#000000" android:pathData="M37.5,59a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M47.5,59a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M57.5,59a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M67.5,59a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#000000" android:pathData="M77.5,59a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
+    <!-- Left Strings -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:pathData="M32,38 L25,54 M32,38 L39,54" />
 
-    <!-- Row 5: 3 dots (y=69, Nothing Red) -->
-    <path android:fillColor="#D71921" android:pathData="M47.5,69a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#D71921" android:pathData="M57.5,69a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
-    <path android:fillColor="#D71921" android:pathData="M67.5,69a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
+    <!-- Left Red Circle -->
+    <path
+        android:fillColor="#D71921"
+        android:pathData="M32,60m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" />
 
-    <!-- Row 6: 1 dot (y=79, Nothing Red) -->
-    <path android:fillColor="#D71921" android:pathData="M57.5,79a3.5,3.5 0,1 1,-7 0a3.5,3.5 0,1 1,7 0" />
+    <!-- Right Strings -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.2"
+        android:pathData="M76,38 L69,54 M76,38 L83,54" />
+
+    <!-- Right Red Circle -->
+    <path
+        android:fillColor="#D71921"
+        android:pathData="M76,60m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" />
 
 </vector>

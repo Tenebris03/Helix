@@ -17,33 +17,51 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tenebris.health_tracker.ui.components.*
 import com.tenebris.health_tracker.ui.scanner.BarcodeScannerView
 import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
 import com.tenebris.health_tracker.ui.theme.NType82
 import com.tenebris.health_tracker.ui.theme.NothingRed
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel) {
-    val state by viewModel.state.collectAsState()
-    val scannerState by viewModel.scannerState.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
 
-    DashboardContent(
-        state = state,
-        scannerState = scannerState,
-        onDateSelected = { viewModel.selectDate(it) },
-        onDeleteFood = { viewModel.deleteFood(it) },
-        onAddFood = { name, kcal, prot -> viewModel.addFood(name, kcal, prot) },
-        onBarcodeScanned = { viewModel.onBarcodeScanned(it) },
-        onResetScanner = { viewModel.resetScanner() }
-    )
+    // Smooth transition delay for heavy UI components
+    var isReady by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(300)
+        isReady = true
+    }
+
+    if (!isReady) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            PulsingDotMatrixLoader()
+        }
+    } else {
+        DashboardContent(
+            state = state,
+            scannerState = scannerState,
+            onDateSelected = viewModel::selectDate,
+            onDeleteFood = viewModel::deleteFood,
+            onAddFood = viewModel::addFood,
+            onBarcodeScanned = viewModel::onBarcodeScanned,
+            onResetScanner = viewModel::resetScanner
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,7 +129,7 @@ fun DashboardContent(
             )
 
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().testTag("food_list"),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -141,33 +159,33 @@ fun DashboardContent(
 
 @Composable
 fun FoodCard(entry: com.tenebris.health_tracker.data.model.FoodEntry, onDelete: () -> Unit) {
-    NothingCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = entry.name,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = NType82,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-                Text(
-                    text = "${entry.calories} kcal • ${entry.protein}g protein",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = NType82
-                    ),
-                    color = MaterialTheme.colorScheme.secondary
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .drawBehind {
+                drawRoundRect(
+                    color = surfaceColor,
+                    cornerRadius = CornerRadius(32.dp.toPx())
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-            }
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = entry.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "${entry.calories} kcal • ${entry.protein}g protein",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -218,6 +236,10 @@ fun AddFoodBottomSheet(
         val multiplier = weight / 100f
         kcalInput = (baseCalories * multiplier).toInt().toString()
         proteinInput = (baseProtein * multiplier).toInt().toString()
+    }
+
+    val isAddEnabled by remember {
+        derivedStateOf { name.isNotEmpty() && kcalInput.isNotEmpty() && proteinInput.isNotEmpty() }
     }
 
     ModalBottomSheet(
@@ -336,15 +358,19 @@ fun AddFoodBottomSheet(
                     onClick = {
                         val k = kcalInput.toIntOrNull() ?: 0
                         val p = proteinInput.toIntOrNull() ?: 0
-                        if (name.isNotEmpty()) onAdd(name, k, p)
+                        onAdd(name, k, p)
                     },
+                    enabled = isAddEnabled,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NothingRed,
+                        disabledContainerColor = Color.DarkGray
+                    )
                 ) {
-                    Text("Add to log", color = Color.White)
+                    Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
                 }
             }
         }
