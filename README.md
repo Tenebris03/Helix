@@ -8,7 +8,7 @@ A minimalist, high-performance health and nutrition tracker inspired by the **No
 
 ## 📱 Features
 
-- **Dot-Matrix Dashboard**: Monitor your daily calorie and protein intake with custom-built Nothing-style tachometer gauges.
+- **Dashboard**: Monitor your daily calorie and protein intake with custom-built Nothing-style tachometer gauges.
 - **Dynamic Profile Ecosystem**: Real-time synchronization of BMR, TDEE, and Protein targets based on your latest weight entries.
 - **Smart Barcode Scanner**:
     - **Nothing Viewfinder**: Custom square viewfinder with a dashed/dotted border.
@@ -23,7 +23,7 @@ A minimalist, high-performance health and nutrition tracker inspired by the **No
 
 ## 🛠️ Technical Stack
 
-- **UI**: Jetpack Compose with custom components (Dot Matrix headers, Pulsing loaders, Tachometer gauges).
+- **UI**: Jetpack Compose.
 - **Architecture**: MVVM (Model-View-ViewModel) with a Repository pattern.
 - **Networking**: Retrofit 3.0 + OkHttp 5 + Kotlinx Serialization.
 - **Local Storage**: Room Database with Write-Ahead-Logging (WAL) and DataStore for user preferences.
