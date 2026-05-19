@@ -31,10 +31,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.tenebris.health_tracker.BuildConfig
 import com.tenebris.health_tracker.data.local.AppDatabase
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.remote.OpenFoodFactsApi
 import com.tenebris.health_tracker.data.repository.FoodRepository
+import com.tenebris.health_tracker.data.repository.VisionRepository
+import com.tenebris.health_tracker.data.remote.FoodVisionService
+import com.google.ai.client.generativeai.GenerativeModel
 import com.tenebris.health_tracker.ui.dashboard.DashboardScreen
 import com.tenebris.health_tracker.ui.dashboard.DashboardViewModel
 import com.tenebris.health_tracker.ui.onboarding.OnboardingScreen
@@ -81,6 +85,14 @@ class MainActivity : ComponentActivity() {
         FoodRepository(db.foodDao(), db.cachedProductDao(), api) 
     }
 
+    private val visionRepository by lazy {
+        val generativeModel = GenerativeModel(
+            modelName = "gemini-3-flash-preview",
+            apiKey = BuildConfig.GEMINI_API_KEY,
+        )
+        VisionRepository(FoodVisionService(generativeModel))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -88,14 +100,19 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             HealthTrackerTheme {
-                HealthTrackerApp(db, userPrefs, foodRepository)
+                HealthTrackerApp(db, userPrefs, foodRepository, visionRepository)
             }
         }
     }
 }
 
 @Composable
-fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences, foodRepository: FoodRepository) {
+fun HealthTrackerApp(
+    db: AppDatabase, 
+    userPrefs: UserPreferences, 
+    foodRepository: FoodRepository,
+    visionRepository: VisionRepository
+) {
     val navController = rememberNavController()
     val isOnboarded by userPrefs.isOnboarded.collectAsState(initial = null)
 
@@ -119,13 +136,18 @@ fun HealthTrackerApp(db: AppDatabase, userPrefs: UserPreferences, foodRepository
             OnboardingScreen(onboardingViewModel)
         }
         composable("main") {
-            MainTabScreen(db, userPrefs, foodRepository)
+            MainTabScreen(db, userPrefs, foodRepository, visionRepository)
         }
     }
 }
 
 @Composable
-fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences, foodRepository: FoodRepository) {
+fun MainTabScreen(
+    db: AppDatabase, 
+    userPrefs: UserPreferences, 
+    foodRepository: FoodRepository,
+    visionRepository: VisionRepository
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -149,7 +171,7 @@ fun MainTabScreen(db: AppDatabase, userPrefs: UserPreferences, foodRepository: F
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return DashboardViewModel(foodRepository, db.weightDao(), db.profileDao(), userPrefs) as T
+                                return DashboardViewModel(foodRepository, visionRepository, db.weightDao(), db.profileDao(), userPrefs) as T
                             }
                         }
                     )

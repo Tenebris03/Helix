@@ -17,8 +17,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
+import android.graphics.Bitmap
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -65,6 +71,7 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             onDeleteFood = viewModel::deleteFood,
             onAddFood = viewModel::addFood,
             onBarcodeScanned = viewModel::onBarcodeScanned,
+            onFoodImageCaptured = viewModel::onFoodImageCaptured,
             onResetScanner = viewModel::resetScanner
         )
     }
@@ -79,6 +86,7 @@ fun DashboardContent(
     onDeleteFood: (com.tenebris.health_tracker.data.model.FoodEntry) -> Unit,
     onAddFood: (String, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
+    onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
@@ -157,6 +165,7 @@ fun DashboardContent(
                     showSheet = false
                 },
                 onBarcodeScanned = onBarcodeScanned,
+                onFoodImageCaptured = onFoodImageCaptured,
                 sheetState = sheetState
             )
         }
@@ -203,6 +212,7 @@ fun AddFoodBottomSheet(
     onDismiss: () -> Unit,
     onAdd: (String, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
+    onFoodImageCaptured: (Bitmap) -> Unit,
     sheetState: SheetState
 ) {
     var name by remember { mutableStateOf("") }
@@ -211,13 +221,30 @@ fun AddFoodBottomSheet(
     var weightInput by remember { mutableStateOf("100") }
     
     var showScanner by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+    val barcodePermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             showScanner = true
+        }
+    }
+
+    val visionCameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            onFoodImageCaptured(bitmap)
+        }
+    }
+
+    val visionPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            visionCameraLauncher.launch(null)
         }
     }
 
@@ -275,19 +302,41 @@ fun AddFoodBottomSheet(
                         fontWeight = FontWeight.Bold
                     )
                 )
-                
-                IconButton(onClick = { 
-                    if (showScanner) {
-                        showScanner = false
-                    } else {
-                        cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+
+                Row {
+                    IconButton(onClick = {
+                        val permission = Manifest.permission.CAMERA
+                        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                            visionCameraLauncher.launch(null)
+                        } else {
+                            visionPermissionLauncher.launch(permission)
+                        }
+                    }) {
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            contentDescription = "AI Vision",
+                            tint = Color.White
+                        )
                     }
-                }) {
-                    Icon(
-                        Icons.Default.QrCodeScanner, 
-                        contentDescription = "Scan barcode",
-                        tint = if (showScanner) NothingRed else Color.White
-                    )
+
+                    IconButton(onClick = {
+                        if (showScanner) {
+                            showScanner = false
+                        } else {
+                            val permission = Manifest.permission.CAMERA
+                            if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                                showScanner = true
+                            } else {
+                                barcodePermissionLauncher.launch(permission)
+                            }
+                        }
+                    }) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan barcode",
+                            tint = if (showScanner) NothingRed else Color.White
+                        )
+                    }
                 }
             }
 

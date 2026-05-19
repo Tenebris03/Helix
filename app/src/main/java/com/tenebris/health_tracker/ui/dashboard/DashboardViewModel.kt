@@ -10,6 +10,8 @@ import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.repository.FoodRepository
+import com.tenebris.health_tracker.data.repository.VisionRepository
+import android.graphics.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -36,6 +38,7 @@ sealed class ScannerState {
 
 class DashboardViewModel(
     private val repository: FoodRepository,
+    private val visionRepository: VisionRepository,
     private val weightDao: com.tenebris.health_tracker.data.local.WeightDao,
     private val profileDao: ProfileDao,
     private val userPreferences: UserPreferences
@@ -175,6 +178,25 @@ class DashboardViewModel(
                 }
                 .onFailure { error ->
                     _scannerState.value = ScannerState.Error(error.message ?: "Unknown error")
+                }
+        }
+    }
+
+    fun onFoodImageCaptured(bitmap: Bitmap) {
+        if (_scannerState.value is ScannerState.Loading) return
+
+        _scannerState.value = ScannerState.Loading
+        viewModelScope.launch {
+            visionRepository.recognizeFood(bitmap)
+                .onSuccess { entry ->
+                    _scannerState.value = ScannerState.Success(
+                        name = entry.name,
+                        calories100g = entry.calories,
+                        protein100g = entry.protein
+                    )
+                }
+                .onFailure { error ->
+                    _scannerState.value = ScannerState.Error(error.message ?: "Vision error")
                 }
         }
     }
