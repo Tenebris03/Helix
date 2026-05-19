@@ -24,4 +24,7 @@ interface FoodDao {
 
     @Query("SELECT SUM(protein) FROM food_entries WHERE date = :date")
     fun getTotalProteinByDate(date: String): Flow<Int?>
+
+    @Query("SELECT * FROM food_entries GROUP BY name, calories, protein ORDER BY id DESC LIMIT 50")
+    fun getUniqueRecentEntries(): Flow<List<FoodEntry>>
 }

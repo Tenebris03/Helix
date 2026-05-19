@@ -25,6 +25,10 @@ class FoodRepository(
         foodDao.deleteEntry(entry)
     }
 
+    fun getUniqueRecentEntries(): Flow<List<FoodEntry>> {
+        return foodDao.getUniqueRecentEntries()
+    }
+
     suspend fun getProductByBarcode(barcode: String): Result<CachedProduct> {
         // 1. Check local cache
         val cached = cachedProductDao.getProductByBarcode(barcode)

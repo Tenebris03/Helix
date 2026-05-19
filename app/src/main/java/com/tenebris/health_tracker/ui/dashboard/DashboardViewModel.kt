@@ -25,7 +25,8 @@ data class DashboardState(
     val totalCalories: Int = 0,
     val totalProtein: Int = 0,
     val targetCalories: Int = 2000,
-    val targetProtein: Int = 150
+    val targetProtein: Int = 150,
+    val recentEntries: List<FoodEntry> = emptyList()
 )
 
 @Stable
@@ -126,14 +127,18 @@ class DashboardViewModel(
             
             Triple(date, adjustedTarget.toInt(), proteinTarget)
         }.flowOn(Dispatchers.Default).flatMapLatest { (date, targetCal, targetProt) ->
-            repository.getEntriesByDate(date).map { entries ->
+            combine(
+                repository.getEntriesByDate(date),
+                repository.getUniqueRecentEntries()
+            ) { entries, recent ->
                 DashboardState(
                     selectedDate = date,
                     entries = entries,
                     totalCalories = entries.sumOf { it.calories },
                     totalProtein = entries.sumOf { it.protein },
                     targetCalories = targetCal,
-                    targetProtein = targetProt
+                    targetProtein = targetProt,
+                    recentEntries = recent
                 )
             }.flowOn(Dispatchers.Default)
         }

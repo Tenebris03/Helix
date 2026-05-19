@@ -90,12 +90,16 @@ fun DashboardContent(
     onResetScanner: () -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
+    var sheetType by remember { mutableStateOf<SheetType>(SheetType.Choice) }
     val sheetState = rememberModalBottomSheetState()
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showSheet = true },
+                onClick = { 
+                    sheetType = SheetType.Choice
+                    showSheet = true 
+                },
                 containerColor = NothingRed,
                 contentColor = Color.White,
                 shape = CircleShape,
@@ -154,20 +158,76 @@ fun DashboardContent(
         }
 
         if (showSheet) {
-            AddFoodBottomSheet(
-                scannerState = scannerState,
-                onDismiss = { 
+            ModalBottomSheet(
+                onDismissRequest = { 
                     showSheet = false
                     onResetScanner()
                 },
-                onAdd = { name, kcal, prot ->
-                    onAddFood(name, kcal, prot)
-                    showSheet = false
-                },
-                onBarcodeScanned = onBarcodeScanned,
-                onFoodImageCaptured = onFoodImageCaptured,
-                sheetState = sheetState
-            )
+                sheetState = sheetState,
+                containerColor = Color(0xFF0A0A0A),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                dragHandle = null
+            ) {
+                AnimatedContent(
+                    targetState = sheetType,
+                    label = "sheetTypeTransition"
+                ) { type ->
+                    when (type) {
+                        SheetType.Choice -> {
+                            Column(
+                                modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    "Add food",
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontFamily = NType82,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                )
+                                Button(
+                                    onClick = { sheetType = SheetType.PreviouslyAdded },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                                ) {
+                                    Text("Previously added", color = Color.White)
+                                }
+                                Button(
+                                    onClick = { sheetType = SheetType.AddFood },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
+                                ) {
+                                    Text("Add new food", color = Color.White)
+                                }
+                            }
+                        }
+                        SheetType.PreviouslyAdded -> {
+                            PreviouslyAddedSheetContent(
+                                recentEntries = state.recentEntries,
+                                onAdd = { name, kcal, prot ->
+                                    onAddFood(name, kcal, prot)
+                                    showSheet = false
+                                },
+                                onBack = { sheetType = SheetType.Choice }
+                            )
+                        }
+                        SheetType.AddFood -> {
+                            AddFoodSheetContent(
+                                scannerState = scannerState,
+                                onAdd = { name, kcal, prot ->
+                                    onAddFood(name, kcal, prot)
+                                    showSheet = false
+                                },
+                                onBarcodeScanned = onBarcodeScanned,
+                                onFoodImageCaptured = onFoodImageCaptured,
+                                onBack = { sheetType = SheetType.Choice }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -205,15 +265,84 @@ fun FoodCard(entry: com.tenebris.health_tracker.data.model.FoodEntry, onDelete: 
     }
 }
 
+enum class SheetType {
+    Choice, PreviouslyAdded, AddFood
+}
+
+@Composable
+fun PreviouslyAddedSheetContent(
+    recentEntries: List<com.tenebris.health_tracker.data.model.FoodEntry>,
+    onAdd: (String, Int, Int) -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Previously added",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontFamily = NType82,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            TextButton(onClick = onBack) {
+                Text("Back", color = NothingRed)
+            }
+        }
+
+        if (recentEntries.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                Text("No previous entries", color = Color.Gray)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(recentEntries) { entry ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.DarkGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(entry.name, style = MaterialTheme.typography.titleMedium, color = Color.White)
+                            Text(
+                                "${entry.calories} kcal • ${entry.protein}g protein",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        IconButton(
+                            onClick = { onAdd(entry.name, entry.calories, entry.protein) },
+                            modifier = Modifier.background(NothingRed, CircleShape).size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddFoodBottomSheet(
+fun AddFoodSheetContent(
     scannerState: ScannerState,
-    onDismiss: () -> Unit,
     onAdd: (String, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
-    sheetState: SheetState
+    onBack: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var kcalInput by remember { mutableStateOf("") }
@@ -275,26 +404,20 @@ fun AddFoodBottomSheet(
         derivedStateOf { name.isNotEmpty() && kcalInput.isNotEmpty() && proteinInput.isNotEmpty() }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = Color(0xFF0A0A0A),
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        dragHandle = null
+    Column(
+        modifier = Modifier
+            .padding(24.dp)
+            .fillMaxWidth()
+            .padding(bottom = 32.dp, top = 16.dp)
+            .animateContentSize(animationSpec = tween(500)),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxWidth()
-                .padding(bottom = 32.dp, top = 16.dp)
-                .animateContentSize(animationSpec = tween(500)),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Add food",
                     style = MaterialTheme.typography.headlineSmall.copy(
@@ -302,159 +425,164 @@ fun AddFoodBottomSheet(
                         fontWeight = FontWeight.Bold
                     )
                 )
-
-                Row {
-                    IconButton(onClick = {
-                        val permission = Manifest.permission.CAMERA
-                        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
-                            visionCameraLauncher.launch(null)
-                        } else {
-                            visionPermissionLauncher.launch(permission)
-                        }
-                    }) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "AI Vision",
-                            tint = Color.White
-                        )
-                    }
-
-                    IconButton(onClick = {
-                        if (showScanner) {
-                            showScanner = false
-                        } else {
-                            val permission = Manifest.permission.CAMERA
-                            if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
-                                showScanner = true
-                            } else {
-                                barcodePermissionLauncher.launch(permission)
-                            }
-                        }
-                    }) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan barcode",
-                            tint = if (showScanner) NothingRed else Color.White
-                        )
-                    }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(onClick = onBack) {
+                    Text("Back", color = NothingRed)
                 }
             }
 
-            AnimatedContent(
-                targetState = showScanner,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(300)) togetherWith
-                            fadeOut(animationSpec = tween(300))
-                },
-                label = "scannerTransition"
-            ) { targetShowScanner ->
-                if (targetShowScanner) {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp)
-                                .background(Color.Black, RoundedCornerShape(16.dp))
-                        ) {
-                            BarcodeScannerView(
-                                onBarcodeScanned = onBarcodeScanned,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        
-                        Button(
-                            onClick = { showScanner = false },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                        ) {
-                            Text("Cancel Scan", color = Color.White)
+            Row {
+                IconButton(onClick = {
+                    val permission = Manifest.permission.CAMERA
+                    if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                        visionCameraLauncher.launch(null)
+                    } else {
+                        visionPermissionLauncher.launch(permission)
+                    }
+                }) {
+                    Icon(
+                        Icons.Default.CameraAlt,
+                        contentDescription = "AI Vision",
+                        tint = Color.White
+                    )
+                }
+
+                IconButton(onClick = {
+                    if (showScanner) {
+                        showScanner = false
+                    } else {
+                        val permission = Manifest.permission.CAMERA
+                        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+                            showScanner = true
+                        } else {
+                            barcodePermissionLauncher.launch(permission)
                         }
                     }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        AnimatedContent(
-                            targetState = scannerState,
-                            transitionSpec = {
-                                fadeIn() togetherWith fadeOut()
-                            },
-                            label = "scannerStateTransition"
-                        ) { state ->
-                            when (state) {
-                                is ScannerState.Loading -> {
-                                    Box(
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        PulsingDotMatrixLoader()
-                                    }
-                                }
-                                is ScannerState.Error -> {
-                                    Text(
-                                        text = state.message,
-                                        color = MaterialTheme.colorScheme.error,
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                                else -> {}
-                            }
-                        }
+                }) {
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = "Scan barcode",
+                        tint = if (showScanner) NothingRed else Color.White
+                    )
+                }
+            }
+        }
 
+        AnimatedContent(
+            targetState = showScanner,
+            transitionSpec = {
+                fadeIn(animationSpec = tween(300)) togetherWith
+                        fadeOut(animationSpec = tween(300))
+            },
+            label = "scannerTransition"
+        ) { targetShowScanner ->
+            if (targetShowScanner) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .background(Color.Black, RoundedCornerShape(16.dp))
+                    ) {
+                        BarcodeScannerView(
+                            onBarcodeScanned = onBarcodeScanned,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    
+                    Button(
+                        onClick = { showScanner = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                    ) {
+                        Text("Cancel Scan", color = Color.White)
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    AnimatedContent(
+                        targetState = scannerState,
+                        transitionSpec = {
+                            fadeIn() togetherWith fadeOut()
+                        },
+                        label = "scannerStateTransition"
+                    ) { state ->
+                        when (state) {
+                            is ScannerState.Loading -> {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    PulsingDotMatrixLoader()
+                                }
+                            }
+                            is ScannerState.Error -> {
+                                Text(
+                                    text = state.message,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            else -> {}
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Name") },
-                            modifier = Modifier.fillMaxWidth(),
+                            value = weightInput,
+                            onValueChange = { weightInput = it },
+                            label = { Text("Weight (g)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp)
                         )
+                        OutlinedTextField(
+                            value = kcalInput,
+                            onValueChange = { kcalInput = it },
+                            label = { Text("kcal") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        OutlinedTextField(
+                            value = proteinInput,
+                            onValueChange = { proteinInput = it },
+                            label = { Text("Protein (g)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            OutlinedTextField(
-                                value = weightInput,
-                                onValueChange = { weightInput = it },
-                                label = { Text("Weight (g)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            OutlinedTextField(
-                                value = kcalInput,
-                                onValueChange = { kcalInput = it },
-                                label = { Text("kcal") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            OutlinedTextField(
-                                value = proteinInput,
-                                onValueChange = { proteinInput = it },
-                                label = { Text("Protein (g)") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val k = kcalInput.toIntOrNull() ?: 0
-                                val p = proteinInput.toIntOrNull() ?: 0
-                                onAdd(name, k, p)
-                            },
-                            enabled = isAddEnabled,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NothingRed,
-                                disabledContainerColor = Color.DarkGray
-                            )
-                        ) {
-                            Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
-                        }
+                    Button(
+                        onClick = {
+                            val k = kcalInput.toIntOrNull() ?: 0
+                            val p = proteinInput.toIntOrNull() ?: 0
+                            onAdd(name, k, p)
+                        },
+                        enabled = isAddEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = NothingRed,
+                            disabledContainerColor = Color.DarkGray
+                        )
+                    ) {
+                        Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
                     }
                 }
             }
         }
     }
 }
+
