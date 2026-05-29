@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,12 @@ class UserPreferences(private val context: Context) {
         val GENDER = stringPreferencesKey("gender")
         val AGE = intPreferencesKey("age")
         val HEIGHT = intPreferencesKey("height")
+
+        // Coach throttling
+        val LAST_COACH_INTERVENTION = longPreferencesKey("last_coach_intervention")
+        val COACH_HEADLINE = stringPreferencesKey("coach_headline")
+        val COACH_BODY = stringPreferencesKey("coach_body")
+        val COACH_API_KEY_VALID = booleanPreferencesKey("coach_api_key_valid")
     }
 
     val isOnboarded: Flow<Boolean> = context.dataStore.data.map { it[IS_ONBOARDED] ?: false }
@@ -40,6 +47,37 @@ class UserPreferences(private val context: Context) {
     val gender: Flow<String> = context.dataStore.data.map { it[GENDER] ?: "Male" }
     val age: Flow<Int> = context.dataStore.data.map { it[AGE] ?: 25 }
     val height: Flow<Int> = context.dataStore.data.map { it[HEIGHT] ?: 170 }
+
+    val lastCoachIntervention: Flow<Long> = context.dataStore.data.map { it[LAST_COACH_INTERVENTION] ?: 0L }
+    val coachHeadline: Flow<String?> = context.dataStore.data.map { it[COACH_HEADLINE] }
+    val coachBody: Flow<String?> = context.dataStore.data.map { it[COACH_BODY] }
+    val coachApiKeyValid: Flow<Boolean> = context.dataStore.data.map { it[COACH_API_KEY_VALID] ?: true }
+
+    suspend fun saveCoachInterventionTimestamp() {
+        context.dataStore.edit { prefs ->
+            prefs[LAST_COACH_INTERVENTION] = System.currentTimeMillis()
+        }
+    }
+
+    suspend fun saveCoachResponse(headline: String, body: String) {
+        context.dataStore.edit { prefs ->
+            prefs[COACH_HEADLINE] = headline
+            prefs[COACH_BODY] = body
+        }
+    }
+
+    suspend fun clearCoachResponse() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(COACH_HEADLINE)
+            prefs.remove(COACH_BODY)
+        }
+    }
+
+    suspend fun setCoachApiKeyValid(valid: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[COACH_API_KEY_VALID] = valid
+        }
+    }
 
     suspend fun saveOnboardingData(
         tdee: Int, 

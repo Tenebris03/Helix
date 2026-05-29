@@ -1,5 +1,7 @@
 package com.tenebris.health_tracker.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,27 +11,32 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.tenebris.health_tracker.ui.components.DotMatrixHeader
 import com.tenebris.health_tracker.ui.components.NothingCard
 import com.tenebris.health_tracker.ui.theme.NType82
+import com.tenebris.health_tracker.ui.theme.NothingRed
 import java.util.Locale
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val apiKey by viewModel.apiKey.collectAsState()
     
     var goal by remember(state.goal) { mutableStateOf(state.goal) }
     var offset by remember(state.offset) { mutableStateOf(state.offset.toFloat()) }
     var activity by remember(state.activityLevel) { mutableStateOf(state.activityLevel) }
     var age by remember(state.age) { mutableStateOf(state.age.toString()) }
     var height by remember(state.height) { mutableStateOf(state.height.toString()) }
+    var apiKeyInput by remember(apiKey) { mutableStateOf(apiKey) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
@@ -47,6 +54,21 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             val inputStream = context.contentResolver.openInputStream(it)
             viewModel.importData(context, inputStream)
         }
+    }
+
+    val locationPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    val calendarPermLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    val hasLocationPerm = remember {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+    val hasCalendarPerm = remember {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
     }
 
     Column(
@@ -212,6 +234,138 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
         }
         
+        Text(
+            "Invisible Coach",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = Color.Gray
+        )
+
+        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Enter your Gemini API key to enable the Invisible Coach. It runs entirely on-device and never leaves your phone.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+
+                OutlinedTextField(
+                    value = apiKeyInput,
+                    onValueChange = { apiKeyInput = it },
+                    label = { Text("Gemini API Key") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { viewModel.updateApiKey(apiKeyInput) },
+                        modifier = Modifier.weight(1f).height(48.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    ) {
+                        Text("Save Key", color = Color.White)
+                    }
+
+                    if (apiKey.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = {
+                                apiKeyInput = ""
+                                viewModel.clearApiKey()
+                            },
+                            modifier = Modifier.height(48.dp),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                        ) {
+                            Text("Remove", color = Color.Gray)
+                        }
+                    }
+                }
+
+                if (apiKey.isNotEmpty()) {
+                    Text(
+                        "✓ Key configured",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+            }
+        }
+
+        Text(
+            "Permissions",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp),
+            color = Color.Gray
+        )
+
+        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Optional permissions that give the Invisible Coach more context for better insights.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+
+                // Location permission
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Location", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            "Local weather for context-aware coaching",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    if (hasLocationPerm) {
+                        Text("✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                    } else {
+                        Button(
+                            onClick = { locationPermLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text("Grant", color = Color.White)
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = Color.DarkGray)
+
+                // Calendar permission
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Calendar", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            "Detect stress patterns from meeting density",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    if (hasCalendarPerm) {
+                        Text("✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                    } else {
+                        Button(
+                            onClick = { calendarPermLauncher.launch(Manifest.permission.READ_CALENDAR) },
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text("Grant", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(100.dp))
     }
 }

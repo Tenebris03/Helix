@@ -33,6 +33,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tenebris.health_tracker.BuildConfig
 import com.tenebris.health_tracker.data.local.AppDatabase
+import com.tenebris.health_tracker.data.pref.EncryptedStorageManager
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.remote.OpenFoodFactsApi
 import com.tenebris.health_tracker.data.repository.FoodRepository
@@ -85,6 +86,8 @@ class MainActivity : ComponentActivity() {
         FoodRepository(db.foodDao(), db.cachedProductDao(), api) 
     }
 
+    private val encryptedStorage by lazy { EncryptedStorageManager(this) }
+
     private val visionRepository by lazy {
         val generativeModel = GenerativeModel(
             modelName = "gemini-3-flash-preview",
@@ -100,7 +103,7 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             HealthTrackerTheme {
-                HealthTrackerApp(db, userPrefs, foodRepository, visionRepository)
+                HealthTrackerApp(db, userPrefs, foodRepository, visionRepository, encryptedStorage)
             }
         }
     }
@@ -111,7 +114,8 @@ fun HealthTrackerApp(
     db: AppDatabase, 
     userPrefs: UserPreferences, 
     foodRepository: FoodRepository,
-    visionRepository: VisionRepository
+    visionRepository: VisionRepository,
+    encryptedStorage: EncryptedStorageManager
 ) {
     val navController = rememberNavController()
     val isOnboarded by userPrefs.isOnboarded.collectAsState(initial = null)
@@ -136,7 +140,7 @@ fun HealthTrackerApp(
             OnboardingScreen(onboardingViewModel)
         }
         composable("main") {
-            MainTabScreen(db, userPrefs, foodRepository, visionRepository)
+            MainTabScreen(db, userPrefs, foodRepository, visionRepository, encryptedStorage)
         }
     }
 }
@@ -146,7 +150,8 @@ fun MainTabScreen(
     db: AppDatabase, 
     userPrefs: UserPreferences, 
     foodRepository: FoodRepository,
-    visionRepository: VisionRepository
+    visionRepository: VisionRepository,
+    encryptedStorage: EncryptedStorageManager
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -167,15 +172,24 @@ fun MainTabScreen(
                 exitTransition = { androidx.compose.animation.ExitTransition.None }
             ) {
                 composable("dashboard") {
+                    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
                     val dashboardViewModel: DashboardViewModel = viewModel(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return DashboardViewModel(foodRepository, visionRepository, db.weightDao(), db.profileDao(), userPrefs) as T
+                                return DashboardViewModel(foodRepository, visionRepository, db.weightDao(), db.profileDao(), userPrefs, app) as T
                             }
                         }
                     )
-                    DashboardScreen(dashboardViewModel)
+                    val coachViewModel: com.tenebris.health_tracker.ui.coach.CoachViewModel = viewModel(
+                        factory = object : ViewModelProvider.Factory {
+                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                                @Suppress("UNCHECKED_CAST")
+                                return com.tenebris.health_tracker.ui.coach.CoachViewModel(userPrefs) as T
+                            }
+                        }
+                    )
+                    DashboardScreen(dashboardViewModel, coachViewModel)
                 }
                 composable("progress") {
                     val progressViewModel: ProgressViewModel = viewModel(
@@ -193,7 +207,7 @@ fun MainTabScreen(
                         factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 @Suppress("UNCHECKED_CAST")
-                                return SettingsViewModel(userPrefs, db.weightDao(), db.profileDao()) as T
+                                return SettingsViewModel(userPrefs, db.weightDao(), db.profileDao(), encryptedStorage) as T
                             }
                         }
                     )

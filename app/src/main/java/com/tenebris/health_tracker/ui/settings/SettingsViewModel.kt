@@ -7,6 +7,7 @@ import com.tenebris.health_tracker.data.local.ProfileDao
 import com.tenebris.health_tracker.data.local.WeightDao
 import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
+import com.tenebris.health_tracker.data.pref.EncryptedStorageManager
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -23,14 +24,19 @@ data class SettingsState(
     val gender: String = "Male",
     val age: Int = 25,
     val height: Int = 170,
-    val latestWeight: Float = 70f
+    val latestWeight: Float = 70f,
+    val apiKey: String = ""
 )
 
 class SettingsViewModel(
     private val userPreferences: UserPreferences,
     private val weightDao: WeightDao,
-    private val profileDao: ProfileDao
+    private val profileDao: ProfileDao,
+    private val encryptedStorage: EncryptedStorageManager
 ) : ViewModel() {
+
+    private val _apiKey = MutableStateFlow(encryptedStorage.getApiKey() ?: "")
+    val apiKey: StateFlow<String> = _apiKey
 
     val state: StateFlow<SettingsState> = combine(
         userPreferences.goal,
@@ -96,6 +102,22 @@ class SettingsViewModel(
                 )
             )
             userPreferences.saveOnboardingData(bmr, goal, offset, proteinTarget, activityLevel, gender, age, height)
+        }
+    }
+
+    fun updateApiKey(key: String) {
+        _apiKey.value = key
+        encryptedStorage.saveApiKey(key)
+        viewModelScope.launch {
+            userPreferences.setCoachApiKeyValid(true)
+        }
+    }
+
+    fun clearApiKey() {
+        _apiKey.value = ""
+        encryptedStorage.clearApiKey()
+        viewModelScope.launch {
+            userPreferences.setCoachApiKeyValid(true)
         }
     }
 

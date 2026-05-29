@@ -43,6 +43,11 @@ android {
         compose = true
         buildConfig = true
     }
+
+    secrets {
+        propertiesFileName = "secrets.properties"
+        defaultPropertiesFileName = "secrets.defaults.properties"
+    }
 }
 
 dependencies {
@@ -85,9 +90,15 @@ dependencies {
     // Navigation
     implementation(libs.navigation.compose)
 
-    // Lifecycle
-    implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.lifecycle.runtime.compose)
+// Lifecycle
+implementation(libs.lifecycle.viewmodel.compose)
+implementation(libs.lifecycle.runtime.compose)
+
+// WorkManager
+implementation(libs.workmanager.runtime)
+
+// Security
+implementation(libs.security.crypto)
 
     // Baseline Profile
     baselineProfile(project(":baselineprofile"))

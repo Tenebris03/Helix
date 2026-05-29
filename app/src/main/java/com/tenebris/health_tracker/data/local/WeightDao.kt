@@ -27,4 +27,7 @@ interface WeightDao {
 
     @Query("SELECT * FROM weight_entries WHERE date = :date LIMIT 1")
     suspend fun getWeightByDate(date: String): WeightEntry?
+
+    @Query("SELECT AVG(weight) FROM weight_entries WHERE date >= :startDate")
+    suspend fun getAverageWeightSince(startDate: String): Float?
 }

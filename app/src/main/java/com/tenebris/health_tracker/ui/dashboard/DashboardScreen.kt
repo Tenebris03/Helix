@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
@@ -35,10 +37,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tenebris.health_tracker.ui.coach.CoachUiState
+import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.components.*
 import com.tenebris.health_tracker.ui.scanner.BarcodeScannerView
 import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
@@ -48,9 +53,13 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: DashboardViewModel) {
+fun DashboardScreen(
+    viewModel: DashboardViewModel,
+    coachViewModel: CoachViewModel
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
+    val coachState by coachViewModel.state.collectAsStateWithLifecycle()
 
     // Smooth transition delay for heavy UI components
     var isReady by remember { mutableStateOf(false) }
@@ -67,12 +76,14 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
         DashboardContent(
             state = state,
             scannerState = scannerState,
+            coachState = coachState,
             onDateSelected = viewModel::selectDate,
             onDeleteFood = viewModel::deleteFood,
             onAddFood = viewModel::addFood,
             onBarcodeScanned = viewModel::onBarcodeScanned,
             onFoodImageCaptured = viewModel::onFoodImageCaptured,
-            onResetScanner = viewModel::resetScanner
+            onResetScanner = viewModel::resetScanner,
+            onDismissCoach = coachViewModel::dismiss
         )
     }
 }
@@ -82,12 +93,14 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
 fun DashboardContent(
     state: DashboardState,
     scannerState: ScannerState,
+    coachState: CoachUiState = CoachUiState(),
     onDateSelected: (java.time.LocalDate) -> Unit,
     onDeleteFood: (com.tenebris.health_tracker.data.model.FoodEntry) -> Unit,
     onAddFood: (String, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
-    onResetScanner: () -> Unit
+    onResetScanner: () -> Unit,
+    onDismissCoach: () -> Unit = {}
 ) {
     var showSheet by remember { mutableStateOf(false) }
     var sheetType by remember { mutableStateOf<SheetType>(SheetType.Choice) }
@@ -136,6 +149,52 @@ fun DashboardContent(
                     targetCalories = state.targetCalories
                 )
             }
+
+            if (coachState.apiKeyInvalid) {
+                NothingCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(NothingRed)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "API KEY INVALID",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontFamily = NType82,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 2.sp
+                                ),
+                                color = NothingRed
+                            )
+                            Text(
+                                text = "Update your Gemini API key in Settings to reactivate the Invisible Coach.",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = FontFamily.Monospace
+                                ),
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                }
+            }
+
+            CoachCard(
+                headline = coachState.headline ?: "",
+                body = coachState.body ?: "",
+                visible = coachState.visible,
+                onDismiss = onDismissCoach
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 

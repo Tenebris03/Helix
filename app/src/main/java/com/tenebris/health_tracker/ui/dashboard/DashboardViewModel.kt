@@ -12,6 +12,11 @@ import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.repository.FoodRepository
 import com.tenebris.health_tracker.data.repository.VisionRepository
 import android.graphics.Bitmap
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.tenebris.health_tracker.data.worker.InvisibleCoachWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -42,7 +47,8 @@ class DashboardViewModel(
     private val visionRepository: VisionRepository,
     private val weightDao: com.tenebris.health_tracker.data.local.WeightDao,
     private val profileDao: ProfileDao,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val application: android.app.Application
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
@@ -159,7 +165,16 @@ class DashboardViewModel(
                 )
             )
             _scannerState.value = ScannerState.Idle
+            triggerCoach("$name: ${kcal}kcal, ${protein}g protein")
         }
+    }
+
+    private fun triggerCoach(mealLog: String) {
+        val workRequest = OneTimeWorkRequestBuilder<InvisibleCoachWorker>()
+            .setInputData(workDataOf(InvisibleCoachWorker.KEY_MEAL_LOG to mealLog))
+            .build()
+        WorkManager.getInstance(application)
+            .enqueueUniqueWork("invisible_coach", ExistingWorkPolicy.REPLACE, workRequest)
     }
 
     fun deleteFood(entry: FoodEntry) {
