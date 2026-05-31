@@ -446,7 +446,7 @@ fun AddFoodSheetContent(
             name = scannerState.name
             baseCalories = scannerState.calories100g
             baseProtein = scannerState.protein100g
-            weightInput = "100"
+            weightInput = scannerState.estimatedWeightGrams.toString()
             showScanner = false
         }
     }

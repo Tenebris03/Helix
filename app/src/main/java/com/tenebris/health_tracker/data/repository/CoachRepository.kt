@@ -4,6 +4,7 @@ import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.ServerException
 import com.google.ai.client.generativeai.type.content
 import com.tenebris.health_tracker.data.model.CoachResult
+import com.tenebris.health_tracker.data.Constants
 import com.tenebris.health_tracker.data.service.CalendarContextResolver
 import com.tenebris.health_tracker.data.service.CoachPromptBuilder
 import com.tenebris.health_tracker.data.service.DeviceLocation
@@ -25,7 +26,7 @@ class CoachRepository(
         location: DeviceLocation? = null
     ): CoachResult {
         val generativeModel = GenerativeModel(
-            modelName = "gemini-3-flash-preview",
+            modelName = Constants.GEMINI_MODEL,
             apiKey = apiKey,
         )
 

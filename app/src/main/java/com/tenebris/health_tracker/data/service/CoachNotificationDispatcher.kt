@@ -1,18 +1,15 @@
 package com.tenebris.health_tracker.data.service
 
-import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.tenebris.health_tracker.MainActivity
 import com.tenebris.health_tracker.R
 
@@ -57,11 +54,7 @@ object CoachNotificationDispatcher {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .build()
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        ) {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
-        }
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
     }
 
     private fun vibrateDoubleTap(context: Context) {

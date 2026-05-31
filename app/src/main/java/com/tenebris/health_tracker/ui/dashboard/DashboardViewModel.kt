@@ -8,7 +8,9 @@ import com.tenebris.health_tracker.data.local.ProfileDao
 import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
+import com.tenebris.health_tracker.data.service.FoodProblemDetector
 import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
 import com.tenebris.health_tracker.data.repository.FoodRepository
 import com.tenebris.health_tracker.data.repository.VisionRepository
 import android.graphics.Bitmap
@@ -38,7 +40,7 @@ data class DashboardState(
 sealed class ScannerState {
     object Idle : ScannerState()
     object Loading : ScannerState()
-    data class Success(val name: String, val calories100g: Int, val protein100g: Int) : ScannerState()
+    data class Success(val name: String, val calories100g: Int, val protein100g: Int, val estimatedWeightGrams: Int = 100) : ScannerState()
     data class Error(val message: String) : ScannerState()
 }
 
@@ -48,7 +50,8 @@ class DashboardViewModel(
     private val weightDao: com.tenebris.health_tracker.data.local.WeightDao,
     private val profileDao: ProfileDao,
     private val userPreferences: UserPreferences,
-    private val application: android.app.Application
+    private val application: android.app.Application,
+    private val foodProblemDetector: FoodProblemDetector
 ) : ViewModel() {
 
     private val _selectedDate = MutableStateFlow(LocalDate.now())
@@ -67,7 +70,7 @@ class DashboardViewModel(
                 val age = userPreferences.age.first()
                 val height = userPreferences.height.first()
                 val protein = userPreferences.proteinTarget.first()
-                
+
                 profileDao.insertProfile(
                     ProfileEntry(
                         date = LocalDate.now().toString(),
@@ -84,55 +87,39 @@ class DashboardViewModel(
         }
     }
 
+    private val prefsFlow: Flow<PrefsSnapshot> = userPreferences.snapshot
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<DashboardState> = _selectedDate.flatMapLatest { date ->
         combine(
             weightDao.getWeightAtDate(date.toString()),
             profileDao.getProfileAtDate(date.toString()),
-            userPreferences.goal,
-            userPreferences.offset,
-            userPreferences.proteinTarget,
-            userPreferences.activityLevel,
-            userPreferences.gender,
-            userPreferences.age,
-            userPreferences.height
-        ) { params: Array<Any?> ->
-            val weightEntry = params[0] as? WeightEntry
-            val profileEntry = params[1] as? ProfileEntry
-            val pGoal = params[2] as String
-            val pOffset = params[3] as Int
-            val pProtein = params[4] as Int
-            val pActivity = params[5] as Float
-            val pGender = params[6] as String
-            val pAge = params[7] as Int
-            val pHeight = params[8] as Int
-
+            prefsFlow
+        ) { weightEntry, profileEntry, prefs ->
             val weightVal = weightEntry?.weight ?: 70f
-            val goal = profileEntry?.goal ?: pGoal
-            val offset = profileEntry?.offset ?: pOffset
-            val activityLevel = profileEntry?.activityLevel ?: pActivity
-            val gender = profileEntry?.gender ?: pGender
-            val age = profileEntry?.age ?: pAge
-            val height = profileEntry?.height ?: pHeight
-            val proteinTarget = profileEntry?.proteinTarget ?: pProtein
-            
-            // Recalculate BMR dynamically: 10*weight + 6.25*height - 5*age + s
+            val goal = profileEntry?.goal ?: prefs.goal
+            val offset = profileEntry?.offset ?: prefs.offset
+            val activityLevel = profileEntry?.activityLevel ?: prefs.activityLevel
+            val gender = profileEntry?.gender ?: prefs.gender
+            val age = profileEntry?.age ?: prefs.age
+            val height = profileEntry?.height ?: prefs.height
+            val proteinTarget = profileEntry?.proteinTarget ?: prefs.proteinTarget
+
             val bmr = if (gender == "Male") {
                 10 * weightVal + 6.25 * height - 5 * age + 5
             } else {
                 10 * weightVal + 6.25 * height - 5 * age - 161
             }
 
-            // TDEE = BMR * PAL
             val tdee = bmr * activityLevel
             val adjustedTarget = when (goal) {
                 "Lose" -> tdee - offset
                 "Gain" -> tdee + offset
                 else -> tdee
             }
-            
-            Triple(date, adjustedTarget.toInt(), proteinTarget)
-        }.flowOn(Dispatchers.Default).flatMapLatest { (date, targetCal, targetProt) ->
+
+            Pair(adjustedTarget.toInt(), proteinTarget)
+        }.flowOn(Dispatchers.Default).flatMapLatest { (targetCal, targetProt) ->
             combine(
                 repository.getEntriesByDate(date),
                 repository.getUniqueRecentEntries()
@@ -165,7 +152,10 @@ class DashboardViewModel(
                 )
             )
             _scannerState.value = ScannerState.Idle
-            triggerCoach("$name: ${kcal}kcal, ${protein}g protein")
+            val hour = java.time.LocalTime.now().hour
+            if (foodProblemDetector.isProblematic(name, kcal, hour)) {
+                triggerCoach("$name: ${kcal}kcal, ${protein}g protein")
+            }
         }
     }
 
@@ -185,7 +175,7 @@ class DashboardViewModel(
 
     fun onBarcodeScanned(barcode: String) {
         if (_scannerState.value is ScannerState.Loading) return
-        
+
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
             repository.getProductByBarcode(barcode)
@@ -208,11 +198,12 @@ class DashboardViewModel(
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
             visionRepository.recognizeFood(bitmap)
-                .onSuccess { entry ->
+                .onSuccess { result ->
                     _scannerState.value = ScannerState.Success(
-                        name = entry.name,
-                        calories100g = entry.calories,
-                        protein100g = entry.protein
+                        name = result.name,
+                        calories100g = result.calories100g,
+                        protein100g = result.protein100g,
+                        estimatedWeightGrams = result.estimatedWeightGrams
                     )
                 }
                 .onFailure { error ->

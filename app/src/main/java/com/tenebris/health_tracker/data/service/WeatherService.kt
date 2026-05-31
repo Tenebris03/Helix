@@ -16,9 +16,10 @@ class WeatherService {
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun getCurrentWeatherDescription(
-        latitude: Double = DEFAULT_LAT,
-        longitude: Double = DEFAULT_LON
+        latitude: Double? = null,
+        longitude: Double? = null
     ): String {
+        if (latitude == null || longitude == null) return ""
         return try {
             val request = Request.Builder()
                 .url("$BASE_URL?latitude=$latitude&longitude=$longitude&current_weather=true")
@@ -41,8 +42,6 @@ class WeatherService {
 
     companion object {
         private const val BASE_URL = "https://api.open-meteo.com/v1/forecast"
-        private const val DEFAULT_LAT = 52.52
-        private const val DEFAULT_LON = 13.405
 
         private val weatherCodes = mapOf(
             0 to "Clear", 1 to "Mainly clear", 2 to "Partly cloudy", 3 to "Overcast",

@@ -13,6 +13,15 @@ data class ProductResponse(
 )
 
 @Serializable
+data class SearchResponse(
+    val products: List<Product> = emptyList(),
+    val count: Int = 0,
+    @SerialName("page_size")
+    val pageSize: Int = 0,
+    val skip: Int = 0
+)
+
+@Serializable
 data class Product(
     @SerialName("product_name")
     val productName: String? = null,

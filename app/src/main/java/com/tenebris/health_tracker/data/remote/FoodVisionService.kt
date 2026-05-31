@@ -5,38 +5,35 @@ import android.util.Log
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.ServerException
 import com.google.ai.client.generativeai.type.content
-import com.tenebris.health_tracker.data.model.FoodEntry
+import com.tenebris.health_tracker.data.model.FoodRecognitionResult
 import kotlinx.coroutines.delay
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.time.LocalDate
 
 class FoodVisionService(private val generativeModel: GenerativeModel) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun analyzeFoodImage(bitmap: Bitmap): FoodEntry? {
+    suspend fun analyzeFoodImage(bitmap: Bitmap): FoodRecognitionResult? {
         val prompt = content {
             image(bitmap)
             text(
                 """
-                You are a highly accurate nutritional analysis assistant. 
-                Analyze this food image and provide an estimation of its nutritional content.
-                
-                Identify the primary food item.
-                Estimate the calories and protein content PER 100g of this food item.
-                Do NOT estimate the portion size, provide values for exactly 100g.
-                Use realistic average values for the identified dish.
-                
-                Return ONLY a valid JSON object in the following format, with no preamble or explanation:
+                You are a highly accurate nutritional analysis assistant.
+                Analyze this food image.
+
+                Identify the primary food item and estimate:
+                1. The food name (short, generic)
+                2. The estimated portion size on the plate in grams
+                3. Nutritional values PER 100g as a fallback estimate
+
+                Return ONLY a valid JSON object with no preamble:
                 {
-                  "name": "Exact Food Name",
-                  "calories": 250,
-                  "protein": 15
+                  "name": "Grilled Chicken Salad",
+                  "estimatedWeightGrams": 300,
+                  "fallbackCalories100g": 150,
+                  "fallbackProtein100g": 25
                 }
-                
-                The calories and protein values can be decimal numbers.
-                If you see multiple items, analyze the most prominent one.
-                If you cannot identify the food, provide your best guess based on visual cues.
                 """.trimIndent(),
             )
         }
@@ -55,17 +52,17 @@ class FoodVisionService(private val generativeModel: GenerativeModel) {
                 return cleanedResponse?.let {
                     Log.d("FoodVisionService", "Cleaned response: $it")
                     val dto = json.decodeFromString<FoodVisionDto>(it)
-                    FoodEntry(
+                    FoodRecognitionResult(
                         name = dto.name,
-                        calories = dto.calories.toInt(),
-                        protein = dto.protein.toInt(),
-                        date = LocalDate.now().toString()
+                        calories100g = dto.fallbackCalories100g,
+                        protein100g = dto.fallbackProtein100g,
+                        estimatedWeightGrams = dto.estimatedWeightGrams
                     )
                 }
             } catch (e: ServerException) {
-                if (attempt < 2) { // Retry for the first and second attempt
+                if (attempt < 2) {
                     val delayMillis = 2000L * (attempt + 1)
-                    Log.w("FoodVisionService", "Server error (503), retrying in $delayMillis ms (Attempt ${attempt + 1}/3)")
+                    Log.w("FoodVisionService", "Server error, retrying in $delayMillis ms (Attempt ${attempt + 1}/3)")
                     delay(delayMillis)
                 } else {
                     Log.e("FoodVisionService", "Server error after 3 attempts", e)
@@ -77,11 +74,12 @@ class FoodVisionService(private val generativeModel: GenerativeModel) {
         }
         return null
     }
-}
 
-@kotlinx.serialization.Serializable
-private data class FoodVisionDto(
-    val name: String,
-    val calories: Double,
-    val protein: Double
-)
+    @Serializable
+    private data class FoodVisionDto(
+        val name: String,
+        val estimatedWeightGrams: Int,
+        val fallbackCalories100g: Int,
+        val fallbackProtein100g: Int
+    )
+}

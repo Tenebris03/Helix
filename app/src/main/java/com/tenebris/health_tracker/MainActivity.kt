@@ -22,24 +22,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.tenebris.health_tracker.BuildConfig
-import com.tenebris.health_tracker.data.local.AppDatabase
-import com.tenebris.health_tracker.data.pref.EncryptedStorageManager
-import com.tenebris.health_tracker.data.pref.UserPreferences
-import com.tenebris.health_tracker.data.remote.OpenFoodFactsApi
-import com.tenebris.health_tracker.data.repository.FoodRepository
-import com.tenebris.health_tracker.data.repository.VisionRepository
-import com.tenebris.health_tracker.data.remote.FoodVisionService
-import com.google.ai.client.generativeai.GenerativeModel
 import com.tenebris.health_tracker.ui.dashboard.DashboardScreen
 import com.tenebris.health_tracker.ui.dashboard.DashboardViewModel
 import com.tenebris.health_tracker.ui.onboarding.OnboardingScreen
@@ -48,76 +36,32 @@ import com.tenebris.health_tracker.ui.progress.ProgressScreen
 import com.tenebris.health_tracker.ui.progress.ProgressViewModel
 import com.tenebris.health_tracker.ui.settings.SettingsScreen
 import com.tenebris.health_tracker.ui.settings.SettingsViewModel
+import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
 import com.tenebris.health_tracker.ui.theme.NothingRed
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.Retrofit
-import kotlinx.serialization.json.Json
-import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import okhttp3.MediaType.Companion.toMediaType
+import org.koin.androidx.compose.get as koinGet
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
-    private val db by lazy { AppDatabase.getDatabase(this) }
-    private val userPrefs by lazy { UserPreferences(this) }
-    
-    private val api by lazy {
-        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-        val client = OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder()
-                    .header("User-Agent", "HealthTrackerApp - Android - Version 1.0 - https://github.com/tenebris/healthtracker")
-                    .build()
-                chain.proceed(request)
-            }
-            .build()
-
-        val json = Json { ignoreUnknownKeys = true }
-        Retrofit.Builder()
-            .baseUrl(OpenFoodFactsApi.BASE_URL)
-            .client(client)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-            .create(OpenFoodFactsApi::class.java)
-    }
-
-    private val foodRepository by lazy { 
-        FoodRepository(db.foodDao(), db.cachedProductDao(), api) 
-    }
-
-    private val encryptedStorage by lazy { EncryptedStorageManager(this) }
-
-    private val visionRepository by lazy {
-        val generativeModel = GenerativeModel(
-            modelName = "gemini-3-flash-preview",
-            apiKey = BuildConfig.GEMINI_API_KEY,
-        )
-        VisionRepository(FoodVisionService(generativeModel))
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         setContent {
             HealthTrackerTheme {
-                HealthTrackerApp(db, userPrefs, foodRepository, visionRepository, encryptedStorage)
+                HealthTrackerApp()
             }
         }
     }
 }
 
 @Composable
-fun HealthTrackerApp(
-    db: AppDatabase, 
-    userPrefs: UserPreferences, 
-    foodRepository: FoodRepository,
-    visionRepository: VisionRepository,
-    encryptedStorage: EncryptedStorageManager
-) {
+fun HealthTrackerApp() {
     val navController = rememberNavController()
+    val userPrefs: UserPreferences = koinGet()
     val isOnboarded by userPrefs.isOnboarded.collectAsState(initial = null)
 
     if (isOnboarded == null) return
@@ -129,30 +73,17 @@ fun HealthTrackerApp(
         exitTransition = { androidx.compose.animation.ExitTransition.None }
     ) {
         composable("onboarding") {
-            val onboardingViewModel: OnboardingViewModel = viewModel(
-                factory = object : ViewModelProvider.Factory {
-                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                        @Suppress("UNCHECKED_CAST")
-                        return OnboardingViewModel(userPrefs, db.weightDao(), db.profileDao()) as T
-                    }
-                }
-            )
+            val onboardingViewModel: OnboardingViewModel = koinViewModel()
             OnboardingScreen(onboardingViewModel)
         }
         composable("main") {
-            MainTabScreen(db, userPrefs, foodRepository, visionRepository, encryptedStorage)
+            MainTabScreen()
         }
     }
 }
 
 @Composable
-fun MainTabScreen(
-    db: AppDatabase, 
-    userPrefs: UserPreferences, 
-    foodRepository: FoodRepository,
-    visionRepository: VisionRepository,
-    encryptedStorage: EncryptedStorageManager
-) {
+fun MainTabScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -166,51 +97,22 @@ fun MainTabScreen(
     Scaffold { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             NavHost(
-                navController = navController, 
+                navController = navController,
                 startDestination = "dashboard",
                 enterTransition = { androidx.compose.animation.EnterTransition.None },
                 exitTransition = { androidx.compose.animation.ExitTransition.None }
             ) {
                 composable("dashboard") {
-                    val app = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
-                    val dashboardViewModel: DashboardViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return DashboardViewModel(foodRepository, visionRepository, db.weightDao(), db.profileDao(), userPrefs, app) as T
-                            }
-                        }
-                    )
-                    val coachViewModel: com.tenebris.health_tracker.ui.coach.CoachViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return com.tenebris.health_tracker.ui.coach.CoachViewModel(userPrefs) as T
-                            }
-                        }
-                    )
+                    val dashboardViewModel: DashboardViewModel = koinViewModel()
+                    val coachViewModel: CoachViewModel = koinViewModel()
                     DashboardScreen(dashboardViewModel, coachViewModel)
                 }
                 composable("progress") {
-                    val progressViewModel: ProgressViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return ProgressViewModel(db.weightDao()) as T
-                            }
-                        }
-                    )
+                    val progressViewModel: ProgressViewModel = koinViewModel()
                     ProgressScreen(progressViewModel)
                 }
                 composable("settings") {
-                    val settingsViewModel: SettingsViewModel = viewModel(
-                        factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return SettingsViewModel(userPrefs, db.weightDao(), db.profileDao(), encryptedStorage) as T
-                            }
-                        }
-                    )
+                    val settingsViewModel: SettingsViewModel = koinViewModel()
                     SettingsScreen(settingsViewModel)
                 }
             }
@@ -234,7 +136,7 @@ fun MainTabScreen(
                                 .clip(RoundedCornerShape(100.dp))
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = null // Remove ripple for instant feel
+                                    indication = null
                                 ) {
                                     navController.navigate(item.route) {
                                         popUpTo(navController.graph.findStartDestination().id) {

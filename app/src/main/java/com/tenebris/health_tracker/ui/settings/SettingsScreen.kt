@@ -56,20 +56,23 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
         }
     }
 
+    var hasLocationPerm by remember { mutableStateOf(false) }
+    var hasCalendarPerm by remember { mutableStateOf(false) }
+
+    fun checkPermissions() {
+        hasLocationPerm = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        hasCalendarPerm = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
+    }
+
+    checkPermissions()
+
     val locationPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { _ -> }
+    ) { checkPermissions() }
 
     val calendarPermLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { _ -> }
-
-    val hasLocationPerm = remember {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
-    val hasCalendarPerm = remember {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
-    }
+    ) { checkPermissions() }
 
     Column(
         modifier = Modifier

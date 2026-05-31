@@ -53,6 +53,28 @@ class UserPreferences(private val context: Context) {
     val coachBody: Flow<String?> = context.dataStore.data.map { it[COACH_BODY] }
     val coachApiKeyValid: Flow<Boolean> = context.dataStore.data.map { it[COACH_API_KEY_VALID] ?: true }
 
+    data class PrefsSnapshot(
+        val goal: String,
+        val offset: Int,
+        val proteinTarget: Int,
+        val activityLevel: Float,
+        val gender: String,
+        val age: Int,
+        val height: Int
+    )
+
+    val snapshot: Flow<PrefsSnapshot> = context.dataStore.data.map { prefs ->
+        PrefsSnapshot(
+            goal = prefs[GOAL] ?: "Maintain",
+            offset = prefs[OFFSET] ?: 0,
+            proteinTarget = prefs[PROTEIN_TARGET] ?: 150,
+            activityLevel = prefs[ACTIVITY_LEVEL] ?: 1.2f,
+            gender = prefs[GENDER] ?: "Male",
+            age = prefs[AGE] ?: 25,
+            height = prefs[HEIGHT] ?: 170
+        )
+    }
+
     suspend fun saveCoachInterventionTimestamp() {
         context.dataStore.edit { prefs ->
             prefs[LAST_COACH_INTERVENTION] = System.currentTimeMillis()

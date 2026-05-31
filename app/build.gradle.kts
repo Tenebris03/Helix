@@ -74,6 +74,7 @@ dependencies {
 
     // ML Kit & CameraX
     implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.mlkit.image.labeling)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
@@ -99,6 +100,11 @@ implementation(libs.workmanager.runtime)
 
 // Security
 implementation(libs.security.crypto)
+
+// Koin DI
+implementation(libs.koin.android)
+implementation(libs.koin.androidx.compose)
+implementation(libs.koin.androidx.workmanager)
 
     // Baseline Profile
     baselineProfile(project(":baselineprofile"))

@@ -9,9 +9,9 @@ import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 import com.tenebris.health_tracker.data.pref.EncryptedStorageManager
 import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -39,50 +39,38 @@ class SettingsViewModel(
     val apiKey: StateFlow<String> = _apiKey
 
     val state: StateFlow<SettingsState> = combine(
-        userPreferences.goal,
-        userPreferences.offset,
-        userPreferences.activityLevel,
-        userPreferences.gender,
-        userPreferences.age,
-        userPreferences.height,
+        userPreferences.snapshot,
         weightDao.getLatestWeightEntry()
-    ) { params ->
-        val goal = params[0] as String
-        val offset = params[1] as Int
-        val activityLevel = params[2] as Float
-        val gender = params[3] as String
-        val age = params[4] as Int
-        val height = params[5] as Int
-        val latestWeightEntry = params[6] as? WeightEntry
-        
+    ) { prefs, latestWeightEntry ->
+
         val weightVal = latestWeightEntry?.weight ?: 70f
-        
-        val bmr = if (gender == "Male") {
-            10 * weightVal + 6.25 * height - 5 * age + 5
+
+        val bmr = if (prefs.gender == "Male") {
+            10 * weightVal + 6.25 * prefs.height - 5 * prefs.age + 5
         } else {
-            10 * weightVal + 6.25 * height - 5 * age - 161
+            10 * weightVal + 6.25 * prefs.height - 5 * prefs.age - 161
         }
-        
+
         val proteinTarget = (weightVal * 2.0).toInt()
 
         SettingsState(
             bmr = bmr.toInt(),
-            goal = goal,
-            offset = offset,
+            goal = prefs.goal,
+            offset = prefs.offset,
             proteinTarget = proteinTarget,
-            activityLevel = activityLevel,
-            gender = gender,
-            age = age,
-            height = height,
+            activityLevel = prefs.activityLevel,
+            gender = prefs.gender,
+            age = prefs.age,
+            height = prefs.height,
             latestWeight = weightVal
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsState())
 
     fun updateSettings(
-        bmr: Int, 
-        goal: String, 
-        offset: Int, 
-        proteinTarget: Int, 
+        bmr: Int,
+        goal: String,
+        offset: Int,
+        proteinTarget: Int,
         activityLevel: Float,
         gender: String,
         age: Int,
@@ -141,7 +129,6 @@ class SettingsViewModel(
                 dbFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
-                // Trigger a process restart or notify user to restart app for Room to reload
             }
         }
     }
