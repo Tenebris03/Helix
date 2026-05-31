@@ -20,16 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tenebris.health_tracker.data.model.WeightEntry
-import com.tenebris.health_tracker.ui.components.DotMatrixHeader
-import com.tenebris.health_tracker.ui.components.NothingCard
-import com.tenebris.health_tracker.ui.theme.NType82
-import com.tenebris.health_tracker.ui.theme.NothingRed
+import com.tenebris.health_tracker.ui.components.ExpressiveHeader
+import com.tenebris.health_tracker.ui.components.ExpressiveCard
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -45,10 +42,10 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showSheet = true },
-                containerColor = MaterialTheme.colorScheme.tertiary, // Nothing Red
-                contentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary,
                 shape = CircleShape,
-                modifier = Modifier.padding(bottom = 80.dp)
+                modifier = Modifier.padding(bottom = 16.dp, end = 16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add weight")
             }
@@ -58,17 +55,18 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            DotMatrixHeader(text = "Progress")
+            ExpressiveHeader(
+                text = "Progress",
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Removed card background
             Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
                 if (state.weightEntries.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("No weight data yet", color = Color.Gray)
+                        Text("No weight data yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     WeightGraph(entries = state.weightEntries, modifier = Modifier.fillMaxSize())
@@ -94,7 +92,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
     if (showSheet) {
         AddWeightBottomSheet(
             onDismiss = { showSheet = false },
-            onAdd = { 
+            onAdd = {
                 viewModel.addWeight(it)
                 showSheet = false
             },
@@ -110,12 +108,16 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
     val weights = entries.map { it.weight }
     val maxWeight = weights.maxOrNull() ?: 100f
     val minWeight = weights.minOrNull() ?: 0f
-    
+
     val baseline = (minWeight - 5f).coerceAtLeast(0f)
     val topPadding = maxWeight + 5f
     val finalRange = (topPadding - baseline).coerceAtLeast(1f)
 
     val labelFormatter = DateTimeFormatter.ofPattern("MM/dd")
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
     Spacer(
         modifier = modifier
@@ -126,27 +128,27 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
                 val strokeWidth2dp = 2.dp.toPx()
                 val pointRadius = 4.dp.toPx()
                 val labelTextSize = 10.sp.toPx()
-                
+
                 val textPaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.GRAY
+                    color = onSurfaceColor.copy(alpha = 0.6f).hashCode()
                     textSize = labelTextSize
                 }
-                
+
                 onDrawBehind {
                     val width = size.width
                     val height = size.height
                     val graphWidth = width - xAxisPadding
                     val graphHeight = height - yAxisPadding
 
-                    // Draw Axes
+                    val mutedOnSurface = onSurfaceColor.copy(alpha = 0.3f)
                     drawLine(
-                        color = Color.Gray,
+                        color = mutedOnSurface,
                         start = Offset(xAxisPadding, 0f),
                         end = Offset(xAxisPadding, graphHeight),
                         strokeWidth = strokeWidth1dp
                     )
                     drawLine(
-                        color = Color.Gray,
+                        color = mutedOnSurface,
                         start = Offset(xAxisPadding, graphHeight),
                         end = Offset(width, graphHeight),
                         strokeWidth = strokeWidth1dp
@@ -162,7 +164,6 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
                         Offset(x, y)
                     }
 
-                    // Labels for Y-Axis
                     val yLabelCount = 4
                     for (i in 0..yLabelCount) {
                         val yValue = baseline + (finalRange * i / yLabelCount)
@@ -175,7 +176,6 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
                         )
                     }
 
-                    // Path and Points
                     val path = Path().apply {
                         if (points.isNotEmpty()) {
                             moveTo(points[0].x, points[0].y)
@@ -187,18 +187,17 @@ fun WeightGraph(entries: List<WeightEntry>, modifier: Modifier = Modifier) {
 
                     drawPath(
                         path = path,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = primaryColor,
                         style = Stroke(width = strokeWidth2dp)
                     )
 
                     points.forEachIndexed { index, point ->
                         drawCircle(
-                            color = NothingRed,
+                            color = tertiaryColor,
                             radius = pointRadius,
                             center = point
                         )
-                        
-                        // X-Axis Date Labels
+
                         if (entries.size < 7 || index % (entries.size / 4).coerceAtLeast(1) == 0) {
                             drawContext.canvas.nativeCanvas.drawText(
                                 LocalDate.parse(entries[index].date).format(labelFormatter),
@@ -218,7 +217,7 @@ fun WeightHistoryCard(entry: WeightEntry, onDelete: () -> Unit) {
     val date = LocalDate.parse(entry.date)
     val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
 
-    NothingCard(modifier = Modifier.fillMaxWidth()) {
+    ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(20.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -227,15 +226,12 @@ fun WeightHistoryCard(entry: WeightEntry, onDelete: () -> Unit) {
             Column {
                 Text(
                     text = date.format(formatter),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = NType82
-                    )
+                    style = MaterialTheme.typography.labelSmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "${entry.weight} kg",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = NType82,
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -258,8 +254,8 @@ fun AddWeightBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF0A0A0A),
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(topStart = 38.dp, topEnd = 38.dp),
         dragHandle = null
     ) {
         Column(
@@ -272,7 +268,6 @@ fun AddWeightBottomSheet(
             Text(
                 "Log weight",
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = NType82,
                     fontWeight = FontWeight.Bold
                 )
             )
@@ -283,7 +278,7 @@ fun AddWeightBottomSheet(
                 label = { Text("Weight (kg)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                shape = MaterialTheme.shapes.medium
             )
 
             Button(
@@ -293,10 +288,10 @@ fun AddWeightBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
             ) {
-                Text("Add", color = Color.White)
+                Text("Add", color = MaterialTheme.colorScheme.onTertiary)
             }
         }
     }

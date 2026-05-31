@@ -67,16 +67,24 @@ class SettingsViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsState())
 
     fun updateSettings(
-        bmr: Int,
         goal: String,
         offset: Int,
-        proteinTarget: Int,
         activityLevel: Float,
         gender: String,
         age: Int,
         height: Int
     ) {
         viewModelScope.launch {
+            val latestWeight = weightDao.getLatestWeightEntry().first()?.weight ?: 70f
+            
+            val bmr = if (gender == "Male") {
+                10 * latestWeight + 6.25 * height - 5 * age + 5
+            } else {
+                10 * latestWeight + 6.25 * height - 5 * age - 161
+            }
+
+            val proteinTarget = (latestWeight * 2.0).toInt()
+
             profileDao.insertProfile(
                 ProfileEntry(
                     date = java.time.LocalDate.now().toString(),
@@ -89,7 +97,7 @@ class SettingsViewModel(
                     proteinTarget = proteinTarget
                 )
             )
-            userPreferences.saveOnboardingData(bmr, goal, offset, proteinTarget, activityLevel, gender, age, height)
+            userPreferences.saveOnboardingData(bmr.toInt(), goal, offset, proteinTarget, activityLevel, gender, age, height)
         }
     }
 
@@ -105,7 +113,7 @@ class SettingsViewModel(
         _apiKey.value = ""
         encryptedStorage.clearApiKey()
         viewModelScope.launch {
-            userPreferences.setCoachApiKeyValid(true)
+            userPreferences.setCoachApiKeyValid(false)
         }
     }
 

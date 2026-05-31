@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -19,10 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.tenebris.health_tracker.ui.components.DotMatrixHeader
-import com.tenebris.health_tracker.ui.components.NothingCard
-import com.tenebris.health_tracker.ui.theme.NType82
-import com.tenebris.health_tracker.ui.theme.NothingRed
+import com.tenebris.health_tracker.ui.components.*
 import java.util.Locale
 
 @Composable
@@ -30,7 +28,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val apiKey by viewModel.apiKey.collectAsState()
-    
+
     var goal by remember(state.goal) { mutableStateOf(state.goal) }
     var offset by remember(state.offset) { mutableStateOf(state.offset.toFloat()) }
     var activity by remember(state.activityLevel) { mutableStateOf(state.activityLevel) }
@@ -77,43 +75,49 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
     ) {
         Spacer(modifier = Modifier.height(16.dp))
-        DotMatrixHeader(
+        ExpressiveHeader(
             text = "Settings",
             modifier = Modifier.padding(horizontal = 16.dp)
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+
+                val currentAge = age.toIntOrNull() ?: state.age
+                val currentHeight = height.toIntOrNull() ?: state.height
                 
+                val reactiveBmr = if (state.gender == "Male") {
+                    10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge + 5
+                } else {
+                    10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge - 161
+                }
+
                 Text(
-                    "Dynamic BMR: ${state.bmr} kcal", 
-                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = NType82),
-                    color = Color.White
+                    "Dynamic BMR: ${reactiveBmr.toInt()} kcal",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     "Based on latest weight: ${state.latestWeight} kg",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text("Activity level: ${String.format(Locale.getDefault(), "%.1f", activity)}", style = MaterialTheme.typography.labelLarge)
-                Slider(
+                ExpressiveSlider(
                     value = activity,
                     onValueChange = { activity = it },
                     valueRange = 1.0f..2.0f,
                     steps = 9,
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.tertiary,
-                        activeTrackColor = MaterialTheme.colorScheme.tertiary
-                    )
+                    activeColor = MaterialTheme.colorScheme.tertiary
                 )
 
                 Text("Goal", style = MaterialTheme.typography.labelLarge)
@@ -125,149 +129,143 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             label = { Text(g) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                selectedLabelColor = Color.White
+                                selectedLabelColor = MaterialTheme.colorScheme.onTertiary
                             )
                         )
                     }
                 }
 
                 val totalTarget = when(goal) {
-                    "Lose" -> (state.bmr * activity) - offset
-                    "Gain" -> (state.bmr * activity) + offset
-                    else -> state.bmr * activity
+                    "Lose" -> (reactiveBmr * activity) - offset
+                    "Gain" -> (reactiveBmr * activity) + offset
+                    else -> reactiveBmr * activity
                 }
 
                 Text(
-                    "Total daily target: ${totalTarget.toInt()} kcal", 
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = NType82
-                    ),
+                    "Total daily target: ${totalTarget.toInt()} kcal",
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.tertiary
                 )
 
                 Text(
-                    "Protein target: ${state.proteinTarget}g", 
+                    "Protein target: ${state.proteinTarget}g",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text("Calorie offset: ${offset.toInt()} kcal", style = MaterialTheme.typography.bodyMedium)
-                Slider(
+                ExpressiveSlider(
                     value = offset,
                     onValueChange = { offset = it },
                     valueRange = 0f..1000f,
-                    steps = 0,
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.tertiary,
-                        activeTrackColor = MaterialTheme.colorScheme.tertiary
-                    )
+                    activeColor = MaterialTheme.colorScheme.tertiary
                 )
 
-                OutlinedTextField(
+                ExpressiveTextField(
                     value = age,
                     onValueChange = { age = it },
-                    label = { Text("Age") },
+                    label = "Age",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
+                ExpressiveTextField(
                     value = height,
                     onValueChange = { height = it },
-                    label = { Text("Height (cm)") },
+                    label = "Height (cm)",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                Button(
+                ExpressiveButton(
                     onClick = {
                         viewModel.updateSettings(
-                            state.bmr,
-                            goal,
-                            offset.toInt(),
-                            state.proteinTarget,
-                            activity,
-                            state.gender,
-                            age.toIntOrNull() ?: 25,
-                            height.toIntOrNull() ?: 170
+                            goal = goal,
+                            offset = offset.toInt(),
+                            activityLevel = activity,
+                            gender = state.gender,
+                            age = age.toIntOrNull() ?: state.age,
+                            height = height.toIntOrNull() ?: state.height
                         )
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                    contentColor = MaterialTheme.colorScheme.onTertiary
                 ) {
-                    Text("Save changes", color = Color.White)
+                    Text("Save changes")
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
-            "Backup & Restore", 
+            "Backup & Restore",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
-        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "You can backup your data directly to Google Drive by selecting it as the destination in the file picker.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
-                Button(
+
+                ExpressiveButton(
                     onClick = { exportLauncher.launch("health_tracker_backup.db") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ) {
-                    Text("Export data", color = Color.White)
+                    Text("Export data")
                 }
 
                 OutlinedButton(
                     onClick = { importLauncher.launch("*/*") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    shape = CircleShape
                 ) {
-                    Text("Import data", color = Color.White)
+                    Text("Import data", color = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
-        
+
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             "Invisible Coach",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
-        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "Enter your Gemini API key to enable the Invisible Coach. It runs entirely on-device and never leaves your phone.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                OutlinedTextField(
+                ExpressiveTextField(
                     value = apiKeyInput,
                     onValueChange = { apiKeyInput = it },
-                    label = { Text("Gemini API Key") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    label = "Gemini API Key",
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
+                    ExpressiveButton(
                         onClick = { viewModel.updateApiKey(apiKeyInput) },
                         modifier = Modifier.weight(1f).height(48.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
                     ) {
-                        Text("Save Key", color = Color.White)
+                        Text("Save Key")
                     }
 
                     if (apiKey.isNotEmpty()) {
@@ -277,16 +275,16 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 viewModel.clearApiKey()
                             },
                             modifier = Modifier.height(48.dp),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                            shape = CircleShape
                         ) {
-                            Text("Remove", color = Color.Gray)
+                            Text("Remove", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
 
                 if (apiKey.isNotEmpty()) {
                     Text(
-                        "✓ Key configured",
+                        text = "✓ Key configured",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.tertiary
                     )
@@ -294,19 +292,21 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             "Permissions",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = Color.Gray
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(16.dp))
 
-        NothingCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     "Optional permissions that give the Invisible Coach more context for better insights.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Location permission
@@ -320,24 +320,23 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         Text(
                             "Local weather for context-aware coaching",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (hasLocationPerm) {
-                        Text("✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                        Text(text = "✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
                     } else {
-                        Button(
+                        ExpressiveButton(
                             onClick = { locationPermLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
                         ) {
-                            Text("Grant", color = Color.White)
+                            Text("Grant")
                         }
                     }
                 }
 
-                HorizontalDivider(color = Color.DarkGray)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // Calendar permission
                 Row(
@@ -350,19 +349,18 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         Text(
                             "Detect stress patterns from meeting density",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (hasCalendarPerm) {
-                        Text("✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+                        Text(text = "✓ Granted", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
                     } else {
-                        Button(
+                        ExpressiveButton(
                             onClick = { calendarPermLauncher.launch(Manifest.permission.READ_CALENDAR) },
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = NothingRed),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onTertiary
                         ) {
-                            Text("Grant", color = Color.White)
+                            Text("Grant")
                         }
                     }
                 }

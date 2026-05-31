@@ -33,11 +33,11 @@ A minimalist, high-performance health and nutrition tracker inspired by the **No
 
 ## 🎨 Design Philosophy
 
-HealthTracker adheres to the **Nothing OS** design language:
-- **Pure Black Theme**: Absolute `#000000` background for maximum OLED contrast and battery efficiency.
-- **Authentic Typography**: Heavy use of **NType82** for headers and data points.
-- **Nothing Red**: Used sparingly as an accent color (`#D71921`) for primary actions and status indicators.
-- **Zero Latency**: Optimised transitions and instant feedback to ensure the app feels "snappy" and tactile.
+HealthTracker follows **Material 3 Expressive** design language:
+- **M3 Color System**: Full dynamic color support (API 31+), with a warm terracotta seed palette and complete 15-role color scheme for light & dark themes.
+- **System Typography**: Uses `FontFamily.SansSerif` across all 15 M3 type scale styles (ExtraBold `display` sizes, Bold `headline` sizes, Normal `body` sizes).
+- **Expressive Shapes**: Generous rounded corners (8dp/16dp/28dp/38dp) with `ExtraLarge` (38dp) as the default card shape.
+- **Expressive Motion**: Spring-based physics (bouncy gauge arcs, wavy progress indicators) for tactile, responsive interactions.
 
 ## 🚀 Getting Started
 

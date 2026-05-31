@@ -27,6 +27,9 @@ class VisionRepository(
             if (offProduct != null) {
                 val cals = offProduct.nutriments?.calories100g?.toInt() ?: geminiResult.calories100g
                 val pro = offProduct.nutriments?.proteins100g?.toInt() ?: geminiResult.protein100g
+                val fat = offProduct.nutriments?.fat100g?.toInt() ?: geminiResult.fat100g
+                val carb = offProduct.nutriments?.carbohydrates100g?.toInt() ?: geminiResult.carbohydrates100g
+                val fib = offProduct.nutriments?.fiber100g?.toInt() ?: geminiResult.fiber100g
                 val name = offProduct.productName ?: geminiResult.name
 
                 Log.d("VisionRepository", "OpenFoodFacts match: $name (${cals}kcal/${pro}g per 100g)")
@@ -35,6 +38,9 @@ class VisionRepository(
                     name = name,
                     calories100g = cals,
                     protein100g = pro,
+                    fat100g = fat,
+                    carbohydrates100g = carb,
+                    fiber100g = fib,
                     estimatedWeightGrams = geminiResult.estimatedWeightGrams
                 ))
             } else {

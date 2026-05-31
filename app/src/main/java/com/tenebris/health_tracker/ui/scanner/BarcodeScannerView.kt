@@ -1,31 +1,53 @@
 package com.tenebris.health_tracker.ui.scanner
 
-import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FlashOff
+import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sign
+import kotlin.math.sin
+
+val SquircleShape = GenericShape { size, _ ->
+    val r = size.width / 2
+    val n = 3.0
+    val points = 100
+    for (i in 0..points) {
+        val angle = (i * 2 * Math.PI / points)
+        val x = r * abs(cos(angle)).pow(2.0 / n) * sign(cos(angle))
+        val y = r * abs(sin(angle)).pow(2.0 / n) * sign(sin(angle))
+        if (i == 0) moveTo(r + x.toFloat(), r + y.toFloat())
+        else lineTo(r + x.toFloat(), r + y.toFloat())
+    }
+    close()
+}
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
@@ -36,15 +58,24 @@ fun BarcodeScannerView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    
+
     val previewView = remember { PreviewView(context) }
     val scanner = remember { BarcodeScanning.getClient() }
+    
+    var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
+    var isTorchEnabled by remember { mutableStateOf(false) }
+
+    DisposableEffect(cameraControl) {
+        onDispose {
+            cameraControl?.enableTorch(false)
+        }
+    }
 
     LaunchedEffect(Unit) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
-            
+
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
@@ -60,7 +91,7 @@ fun BarcodeScannerView(
                     scanner.process(image)
                         .addOnSuccessListener { barcodes ->
                             for (barcode in barcodes) {
-                                barcode.rawValue?.let { 
+                                barcode.rawValue?.let {
                                     onBarcodeScanned(it)
                                 }
                             }
@@ -77,76 +108,50 @@ fun BarcodeScannerView(
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
+                val camera = cameraProvider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
                     preview,
                     imageAnalysis
                 )
+                cameraControl = camera.cameraControl
             } catch (e: Exception) {
                 // Handle error
             }
         }, ContextCompat.getMainExecutor(context))
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .size(280.dp)
+            .border(6.dp, MaterialTheme.colorScheme.primary, SquircleShape)
+            .clip(SquircleShape)
+    ) {
         AndroidView(
             factory = { previewView },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Nothing-style Viewfinder
-        ScannerOverlay()
+        // Flash Toggle
+        IconButton(
+            onClick = {
+                isTorchEnabled = !isTorchEnabled
+                cameraControl?.enableTorch(isTorchEnabled)
+            },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp)
+                .background(
+                    if (isTorchEnabled) MaterialTheme.colorScheme.primaryContainer 
+                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+                    CircleShape
+                )
+        ) {
+            Icon(
+                imageVector = if (isTorchEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
+                contentDescription = "Toggle Flash",
+                tint = if (isTorchEnabled) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+            )
+        }
     }
-}
-
-@Composable
-fun ScannerOverlay() {
-    Spacer(
-        modifier = Modifier
-            .fillMaxSize()
-            .drawWithCache {
-                val boxSize = 250.dp.toPx()
-                val cornerRadius = CornerRadius(16.dp.toPx())
-                val strokeWidth = 2.dp.toPx()
-                val dashEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 10f), 0f)
-                val backgroundDim = Color.Black.copy(alpha = 0.6f)
-                
-                onDrawBehind {
-                    val canvasWidth = size.width
-                    val canvasHeight = size.height
-                    val left = (canvasWidth - boxSize) / 2
-                    val top = (canvasHeight - boxSize) / 2
-                    val viewFinderSize = androidx.compose.ui.geometry.Size(boxSize, boxSize)
-                    val viewFinderOffset = Offset(left, top)
-
-                    // Dim outer area
-                    drawRect(
-                        color = backgroundDim,
-                        size = size
-                    )
-
-                    // Clear square viewfinder
-                    drawRoundRect(
-                        color = Color.Transparent,
-                        topLeft = viewFinderOffset,
-                        size = viewFinderSize,
-                        cornerRadius = cornerRadius,
-                        blendMode = BlendMode.Clear
-                    )
-
-                    // Dotted border (Nothing style)
-                    drawRoundRect(
-                        color = Color.White,
-                        topLeft = viewFinderOffset,
-                        size = viewFinderSize,
-                        cornerRadius = cornerRadius,
-                        style = Stroke(
-                            width = strokeWidth,
-                            pathEffect = dashEffect
-                        )
-                    )
-                }
-            }
-    )
 }

@@ -12,12 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tenebris.health_tracker.ui.theme.NType82
-import com.tenebris.health_tracker.ui.theme.NothingRed
 
 @Composable
 fun CoachCard(
@@ -32,7 +29,7 @@ fun CoachCard(
         enter = slideInVertically { it },
         exit = slideOutVertically { it }
     ) {
-        NothingCard(
+        ExpressiveCard(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -53,17 +50,16 @@ fun CoachCard(
                             modifier = Modifier
                                 .size(10.dp)
                                 .clip(RoundedCornerShape(50))
-                                .background(NothingRed)
+                                .background(MaterialTheme.colorScheme.tertiary)
                         )
                         Text(
                             text = headline,
                             style = MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = NType82,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
                                 letterSpacing = 2.sp
                             ),
-                            color = NothingRed
+                            color = MaterialTheme.colorScheme.tertiary
                         )
                     }
                     TextButton(
@@ -73,10 +69,9 @@ fun CoachCard(
                         Text(
                             text = "DISMISS",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = FontFamily.Monospace,
                                 fontSize = 10.sp
                             ),
-                            color = Color.Gray
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -85,12 +80,9 @@ fun CoachCard(
 
                 Text(
                     text = body,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                 )
-
             }
         }
     }

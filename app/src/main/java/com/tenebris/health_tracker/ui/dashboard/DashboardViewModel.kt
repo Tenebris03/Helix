@@ -31,8 +31,12 @@ data class DashboardState(
     val entries: List<FoodEntry> = emptyList(),
     val totalCalories: Int = 0,
     val totalProtein: Int = 0,
+    val totalFat: Int = 0,
+    val totalCarbs: Int = 0,
+    val totalFiber: Int = 0,
     val targetCalories: Int = 2000,
     val targetProtein: Int = 150,
+    val currentWeight: Float = 70f,
     val recentEntries: List<FoodEntry> = emptyList()
 )
 
@@ -40,7 +44,15 @@ data class DashboardState(
 sealed class ScannerState {
     object Idle : ScannerState()
     object Loading : ScannerState()
-    data class Success(val name: String, val calories100g: Int, val protein100g: Int, val estimatedWeightGrams: Int = 100) : ScannerState()
+    data class Success(
+        val name: String,
+        val calories100g: Int,
+        val protein100g: Int,
+        val fat100g: Int = 0,
+        val carbohydrates100g: Int = 0,
+        val fiber100g: Int = 0,
+        val estimatedWeightGrams: Int = 100
+    ) : ScannerState()
     data class Error(val message: String) : ScannerState()
 }
 
@@ -62,27 +74,29 @@ class DashboardViewModel(
 
     init {
         viewModelScope.launch {
-            if (profileDao.getLatestProfile().first() == null) {
-                val goal = userPreferences.goal.first()
-                val offset = userPreferences.offset.first()
-                val activity = userPreferences.activityLevel.first()
-                val gender = userPreferences.gender.first()
-                val age = userPreferences.age.first()
-                val height = userPreferences.height.first()
-                val protein = userPreferences.proteinTarget.first()
+            profileDao.getLatestProfile().take(1).collect { latest ->
+                if (latest == null) {
+                    val goal = userPreferences.goal.first()
+                    val offset = userPreferences.offset.first()
+                    val activity = userPreferences.activityLevel.first()
+                    val gender = userPreferences.gender.first()
+                    val age = userPreferences.age.first()
+                    val height = userPreferences.height.first()
+                    val protein = userPreferences.proteinTarget.first()
 
-                profileDao.insertProfile(
-                    ProfileEntry(
-                        date = LocalDate.now().toString(),
-                        activityLevel = activity,
-                        height = height,
-                        age = age,
-                        gender = gender,
-                        goal = goal,
-                        offset = offset,
-                        proteinTarget = protein
+                    profileDao.insertProfile(
+                        ProfileEntry(
+                            date = LocalDate.now().toString(),
+                            activityLevel = activity,
+                            height = height,
+                            age = age,
+                            gender = gender,
+                            goal = goal,
+                            offset = offset,
+                            proteinTarget = protein
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -118,8 +132,8 @@ class DashboardViewModel(
                 else -> tdee
             }
 
-            Pair(adjustedTarget.toInt(), proteinTarget)
-        }.flowOn(Dispatchers.Default).flatMapLatest { (targetCal, targetProt) ->
+            Triple(adjustedTarget.toInt(), proteinTarget, weightVal)
+        }.flatMapLatest { (targetCal, targetProt, weightVal) ->
             combine(
                 repository.getEntriesByDate(date),
                 repository.getUniqueRecentEntries()
@@ -129,25 +143,32 @@ class DashboardViewModel(
                     entries = entries,
                     totalCalories = entries.sumOf { it.calories },
                     totalProtein = entries.sumOf { it.protein },
+                    totalFat = entries.sumOf { it.fat },
+                    totalCarbs = entries.sumOf { it.carbohydrates },
+                    totalFiber = entries.sumOf { it.fiber },
                     targetCalories = targetCal,
                     targetProtein = targetProt,
+                    currentWeight = weightVal,
                     recentEntries = recent
                 )
-            }.flowOn(Dispatchers.Default)
-        }
+            }
+        }.flowOn(Dispatchers.Default)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardState())
 
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
     }
 
-    fun addFood(name: String, kcal: Int, protein: Int) {
+    fun addFood(name: String, kcal: Int, protein: Int, fat: Int = 0, carbs: Int = 0, fiber: Int = 0) {
         viewModelScope.launch {
             repository.addFoodEntry(
                 FoodEntry(
                     name = name,
                     calories = kcal,
                     protein = protein,
+                    fat = fat,
+                    carbohydrates = carbs,
+                    fiber = fiber,
                     date = _selectedDate.value.toString()
                 )
             )
@@ -174,7 +195,7 @@ class DashboardViewModel(
     }
 
     fun onBarcodeScanned(barcode: String) {
-        if (_scannerState.value is ScannerState.Loading) return
+        if (_scannerState.value is ScannerState.Loading || _scannerState.value is ScannerState.Success) return
 
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
@@ -183,7 +204,10 @@ class DashboardViewModel(
                     _scannerState.value = ScannerState.Success(
                         name = product.name,
                         calories100g = product.calories100g,
-                        protein100g = product.protein100g
+                        protein100g = product.protein100g,
+                        fat100g = product.fat100g,
+                        carbohydrates100g = product.carbohydrates100g,
+                        fiber100g = product.fiber100g
                     )
                 }
                 .onFailure { error ->
@@ -193,7 +217,7 @@ class DashboardViewModel(
     }
 
     fun onFoodImageCaptured(bitmap: Bitmap) {
-        if (_scannerState.value is ScannerState.Loading) return
+        if (_scannerState.value is ScannerState.Loading || _scannerState.value is ScannerState.Success) return
 
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
@@ -203,6 +227,9 @@ class DashboardViewModel(
                         name = result.name,
                         calories100g = result.calories100g,
                         protein100g = result.protein100g,
+                        fat100g = result.fat100g,
+                        carbohydrates100g = result.carbohydrates100g,
+                        fiber100g = result.fiber100g,
                         estimatedWeightGrams = result.estimatedWeightGrams
                     )
                 }

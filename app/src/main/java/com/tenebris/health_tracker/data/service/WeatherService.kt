@@ -1,5 +1,7 @@
 package com.tenebris.health_tracker.data.service
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -25,10 +27,10 @@ class WeatherService {
                 .url("$BASE_URL?latitude=$latitude&longitude=$longitude&current_weather=true")
                 .build()
 
-            val response = client.newCall(request).execute()
+            val response = withContext(Dispatchers.IO) { client.newCall(request).execute() }
             if (!response.isSuccessful) return ""
 
-            val body = response.body?.string() ?: return ""
+            val body = withContext(Dispatchers.IO) { response.body?.string() } ?: return ""
             val dto = json.decodeFromString<OpenMeteoResponse>(body)
             val code = dto.currentWeather.weatherCode
             val temp = dto.currentWeather.temperature

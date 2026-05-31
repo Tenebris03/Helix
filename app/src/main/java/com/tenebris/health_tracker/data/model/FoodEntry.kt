@@ -10,5 +10,8 @@ data class FoodEntry(
     val name: String,
     val calories: Int,
     val protein: Int,
+    val fat: Int = 0,
+    val carbohydrates: Int = 0,
+    val fiber: Int = 0,
     val date: String // ISO-8601 format yyyy-MM-dd
 )

@@ -9,7 +9,9 @@ import kotlin.coroutines.resume
 
 class FoodGatekeeper {
 
-    private val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+    private val labeler by lazy { 
+        ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS) 
+    }
 
     suspend fun isFood(bitmap: Bitmap, confidenceThreshold: Float = 0.4f): Boolean {
         val image = InputImage.fromBitmap(bitmap, 0)
@@ -25,9 +27,6 @@ class FoodGatekeeper {
                 .addOnFailureListener {
                     continuation.resume(true)
                 }
-            continuation.invokeOnCancellation {
-                labeler.close()
-            }
         }
     }
 }

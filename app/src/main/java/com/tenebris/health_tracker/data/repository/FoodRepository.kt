@@ -45,13 +45,19 @@ class FoodRepository(
                 val product = response.product
                 val calories = product.nutriments?.calories100g?.toInt() ?: 0
                 val protein = product.nutriments?.proteins100g?.toInt() ?: 0
+                val fat = product.nutriments?.fat100g?.toInt() ?: 0
+                val carbs = product.nutriments?.carbohydrates100g?.toInt() ?: 0
+                val fiber = product.nutriments?.fiber100g?.toInt() ?: 0
                 val name = product.productName ?: "Unknown Product"
                 
                 val newCached = CachedProduct(
                     barcode = barcode,
                     name = name,
                     calories100g = calories,
-                    protein100g = protein
+                    protein100g = protein,
+                    fat100g = fat,
+                    carbohydrates100g = carbs,
+                    fiber100g = fiber
                 )
                 
                 cachedProductDao.insertProduct(newCached)

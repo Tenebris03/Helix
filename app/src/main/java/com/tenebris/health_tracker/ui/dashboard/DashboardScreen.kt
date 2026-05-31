@@ -8,6 +8,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,8 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
@@ -31,24 +37,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.ui.coach.CoachUiState
 import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.components.*
 import com.tenebris.health_tracker.ui.scanner.BarcodeScannerView
 import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
-import com.tenebris.health_tracker.ui.theme.NType82
-import com.tenebris.health_tracker.ui.theme.NothingRed
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +63,6 @@ fun DashboardScreen(
     val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
     val coachState by coachViewModel.state.collectAsStateWithLifecycle()
 
-    // Smooth transition delay for heavy UI components
     var isReady by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(300)
@@ -70,7 +71,7 @@ fun DashboardScreen(
 
     if (!isReady) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            PulsingDotMatrixLoader()
+            WavyLoader()
         }
     } else {
         DashboardContent(
@@ -88,15 +89,15 @@ fun DashboardScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardContent(
     state: DashboardState,
     scannerState: ScannerState,
     coachState: CoachUiState = CoachUiState(),
     onDateSelected: (java.time.LocalDate) -> Unit,
-    onDeleteFood: (com.tenebris.health_tracker.data.model.FoodEntry) -> Unit,
-    onAddFood: (String, Int, Int) -> Unit,
+    onDeleteFood: (FoodEntry) -> Unit,
+    onAddFood: (String, Int, Int, Int, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit,
@@ -105,20 +106,60 @@ fun DashboardContent(
     var showSheet by remember { mutableStateOf(false) }
     var sheetType by remember { mutableStateOf<SheetType>(SheetType.Choice) }
     val sheetState = rememberModalBottomSheetState()
+    
+    var fabExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { 
-                    sheetType = SheetType.Choice
-                    showSheet = true 
-                },
-                containerColor = NothingRed,
-                contentColor = Color.White,
-                shape = CircleShape,
-                modifier = Modifier.padding(bottom = 80.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 16.dp, end = 16.dp),
+                contentAlignment = Alignment.BottomEnd
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add food")
+                FloatingActionButtonMenu(
+                    expanded = fabExpanded,
+                    button = {
+                        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                        val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer
+                        
+                        ToggleFloatingActionButton(
+                            checked = fabExpanded,
+                            onCheckedChange = { fabExpanded = it },
+                            containerColor = { progress ->
+                                androidx.compose.ui.graphics.lerp(tertiaryColor, primaryContainerColor, progress)
+                            }
+                        ) { 
+                            // Access checkedProgress through ToggleFloatingActionButtonScope
+                            val rotation = checkedProgress * 45f
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add",
+                                modifier = Modifier.graphicsLayer { rotationZ = rotation },
+                                tint = if (fabExpanded) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiary
+                            )
+                        }
+                    }
+                ) {
+                    FloatingActionButtonMenuItem(
+                        onClick = {
+                            fabExpanded = false
+                            sheetType = SheetType.PreviouslyAdded
+                            showSheet = true
+                        },
+                        icon = { Icon(Icons.Default.Add, "Recent") },
+                        text = { Text("Recent") }
+                    )
+                    FloatingActionButtonMenuItem(
+                        onClick = {
+                            fabExpanded = false
+                            sheetType = SheetType.AddFood
+                            showSheet = true
+                        },
+                        icon = { Icon(Icons.Default.Add, "New") },
+                        text = { Text("New food") }
+                    )
+                }
             }
         }
     ) { padding ->
@@ -128,7 +169,7 @@ fun DashboardContent(
                 .padding(padding)
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            DotMatrixHeader(
+            ExpressiveHeader(
                 text = "Dashboard",
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -151,7 +192,7 @@ fun DashboardContent(
             }
 
             if (coachState.apiKeyInvalid) {
-                NothingCard(
+                ExpressiveCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -164,25 +205,21 @@ fun DashboardContent(
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(NothingRed)
+                                .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(50))
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "API KEY INVALID",
                                 style = MaterialTheme.typography.labelLarge.copy(
-                                    fontFamily = NType82,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 2.sp
                                 ),
-                                color = NothingRed
+                                color = MaterialTheme.colorScheme.tertiary
                             )
                             Text(
                                 text = "Update your Gemini API key in Settings to reactivate the Invisible Coach.",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace
-                                ),
-                                color = Color.White.copy(alpha = 0.7f)
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -211,20 +248,20 @@ fun DashboardContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.entries, key = { it.id }) { entry ->
-                    FoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
+                    SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
                 }
             }
         }
 
         if (showSheet) {
             ModalBottomSheet(
-                onDismissRequest = { 
+                onDismissRequest = {
                     showSheet = false
                     onResetScanner()
                 },
                 sheetState = sheetState,
-                containerColor = Color(0xFF0A0A0A),
-                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                shape = RoundedCornerShape(topStart = 38.dp, topEnd = 38.dp),
                 dragHandle = null
             ) {
                 AnimatedContent(
@@ -232,57 +269,29 @@ fun DashboardContent(
                     label = "sheetTypeTransition"
                 ) { type ->
                     when (type) {
-                        SheetType.Choice -> {
-                            Column(
-                                modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Text(
-                                    "Add food",
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontFamily = NType82,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                )
-                                Button(
-                                    onClick = { sheetType = SheetType.PreviouslyAdded },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
-                                ) {
-                                    Text("Previously added", color = Color.White)
-                                }
-                                Button(
-                                    onClick = { sheetType = SheetType.AddFood },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = NothingRed)
-                                ) {
-                                    Text("Add new food", color = Color.White)
-                                }
-                            }
-                        }
                         SheetType.PreviouslyAdded -> {
                             PreviouslyAddedSheetContent(
                                 recentEntries = state.recentEntries,
-                                onAdd = { name, kcal, prot ->
-                                    onAddFood(name, kcal, prot)
+                                onAdd = { entry ->
+                                    onAddFood(entry.name, entry.calories, entry.protein, entry.fat, entry.carbohydrates, entry.fiber)
                                     showSheet = false
-                                },
-                                onBack = { sheetType = SheetType.Choice }
+                                }
                             )
                         }
                         SheetType.AddFood -> {
                             AddFoodSheetContent(
                                 scannerState = scannerState,
-                                onAdd = { name, kcal, prot ->
-                                    onAddFood(name, kcal, prot)
+                                onAdd = { name, kcal, prot, fat, carb, fib ->
+                                    onAddFood(name, kcal, prot, fat, carb, fib)
                                     showSheet = false
                                 },
                                 onBarcodeScanned = onBarcodeScanned,
                                 onFoodImageCaptured = onFoodImageCaptured,
-                                onBack = { sheetType = SheetType.Choice }
+                                onResetScanner = onResetScanner
                             )
+                        }
+                        else -> {
+                            // Choice is handled by the FAB Menu directly now
                         }
                     }
                 }
@@ -291,35 +300,82 @@ fun DashboardContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FoodCard(entry: com.tenebris.health_tracker.data.model.FoodEntry, onDelete: () -> Unit) {
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .drawBehind {
-                drawRoundRect(
-                    color = surfaceColor,
-                    cornerRadius = CornerRadius(32.dp.toPx())
+fun SwipeToDeleteFoodCard(entry: FoodEntry, onDelete: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val swipeState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onDelete()
+                true
+            } else {
+                false
+            }
+        },
+        positionalThreshold = { it * 0.4f }
+    )
+
+    SwipeToDismissBox(
+        state = swipeState,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            val color = if (swipeState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                MaterialTheme.colorScheme.errorContainer
+            } else Color.Transparent
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color, MaterialTheme.shapes.large)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column {
-            Text(
-                text = entry.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "${entry.calories} kcal • ${entry.protein}g protein",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.secondary
-            )
+        },
+        content = {
+            FoodCard(entry = entry, onDelete = onDelete)
         }
-        IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+    )
+}
+
+@Composable
+fun FoodCard(entry: FoodEntry, onDelete: () -> Unit) {
+    ElevatedCard(
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = entry.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "${entry.calories} kcal • P: ${entry.protein}g • F: ${entry.fat}g • C: ${entry.carbohydrates}g",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+            }
         }
     }
 }
@@ -330,34 +386,23 @@ enum class SheetType {
 
 @Composable
 fun PreviouslyAddedSheetContent(
-    recentEntries: List<com.tenebris.health_tracker.data.model.FoodEntry>,
-    onAdd: (String, Int, Int) -> Unit,
-    onBack: () -> Unit
+    recentEntries: List<FoodEntry>,
+    onAdd: (FoodEntry) -> Unit
 ) {
     Column(
         modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                "Previously added",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = NType82,
-                    fontWeight = FontWeight.Bold
-                )
+        Text(
+            "Previously added",
+            style = MaterialTheme.typography.headlineSmall.copy(
+                fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = onBack) {
-                Text("Back", color = NothingRed)
-            }
-        }
+        )
 
         if (recentEntries.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                Text("No previous entries", color = Color.Gray)
+                Text("No previous entries", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(
@@ -365,27 +410,43 @@ fun PreviouslyAddedSheetContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(recentEntries) { entry ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.DarkGray.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    ElevatedCard(
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(entry.name, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                            Text(
-                                "${entry.calories} kcal • ${entry.protein}g protein",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
-                        IconButton(
-                            onClick = { onAdd(entry.name, entry.calories, entry.protein) },
-                            modifier = Modifier.background(NothingRed, CircleShape).size(32.dp)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(20.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(entry.name, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    "${entry.calories} kcal • P: ${entry.protein}g • F: ${entry.fat}g • C: ${entry.carbohydrates}g",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            FilledIconButton(
+                                onClick = { onAdd(entry) },
+                                modifier = Modifier.size(36.dp),
+                                colors = IconButtonDefaults.filledIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = "Add",
+                                    tint = MaterialTheme.colorScheme.onTertiary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -398,16 +459,20 @@ fun PreviouslyAddedSheetContent(
 @Composable
 fun AddFoodSheetContent(
     scannerState: ScannerState,
-    onAdd: (String, Int, Int) -> Unit,
+    onAdd: (String, Int, Int, Int, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
-    onBack: () -> Unit
+    onResetScanner: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var kcalInput by remember { mutableStateOf("") }
     var proteinInput by remember { mutableStateOf("") }
+    var fatInput by remember { mutableStateOf("") }
+    var carbInput by remember { mutableStateOf("") }
+    var fiberInput by remember { mutableStateOf("") }
     var weightInput by remember { mutableStateOf("100") }
-    
+
+    var showMacros by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -436,9 +501,11 @@ fun AddFoodSheetContent(
         }
     }
 
-    // Reference values for 100g
     var baseCalories by remember { mutableStateOf(0) }
     var baseProtein by remember { mutableStateOf(0) }
+    var baseFat by remember { mutableStateOf(0) }
+    var baseCarbs by remember { mutableStateOf(0) }
+    var baseFiber by remember { mutableStateOf(0) }
 
     LaunchedEffect(scannerState) {
         if (scannerState is ScannerState.Success) {
@@ -446,17 +513,23 @@ fun AddFoodSheetContent(
             name = scannerState.name
             baseCalories = scannerState.calories100g
             baseProtein = scannerState.protein100g
+            baseFat = scannerState.fat100g
+            baseCarbs = scannerState.carbohydrates100g
+            baseFiber = scannerState.fiber100g
             weightInput = scannerState.estimatedWeightGrams.toString()
+            showMacros = true // Automatically show macros when data is fetched from scanner
             showScanner = false
         }
     }
 
-    // Live scaling
-    LaunchedEffect(weightInput, baseCalories, baseProtein) {
+    LaunchedEffect(weightInput, baseCalories, baseProtein, baseFat, baseCarbs, baseFiber) {
         val weight = weightInput.toFloatOrNull() ?: 100f
         val multiplier = weight / 100f
         kcalInput = (baseCalories * multiplier).toInt().toString()
         proteinInput = (baseProtein * multiplier).toInt().toString()
+        fatInput = (baseFat * multiplier).toInt().toString()
+        carbInput = (baseCarbs * multiplier).toInt().toString()
+        fiberInput = (baseFiber * multiplier).toInt().toString()
     }
 
     val isAddEnabled by remember {
@@ -476,22 +549,16 @@ fun AddFoodSheetContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "Add food",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontFamily = NType82,
-                        fontWeight = FontWeight.Bold
-                    )
+            Text(
+                "Add food",
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onBack) {
-                    Text("Back", color = NothingRed)
-                }
-            }
+            )
 
             Row {
                 IconButton(onClick = {
+                    onResetScanner()
                     val permission = Manifest.permission.CAMERA
                     if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
                         visionCameraLauncher.launch(null)
@@ -502,7 +569,7 @@ fun AddFoodSheetContent(
                     Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "AI Vision",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -510,6 +577,7 @@ fun AddFoodSheetContent(
                     if (showScanner) {
                         showScanner = false
                     } else {
+                        onResetScanner() // Clear previous results before opening scanner
                         val permission = Manifest.permission.CAMERA
                         if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
                             showScanner = true
@@ -521,7 +589,7 @@ fun AddFoodSheetContent(
                     Icon(
                         Icons.Default.QrCodeScanner,
                         contentDescription = "Scan barcode",
-                        tint = if (showScanner) NothingRed else Color.White
+                        tint = if (showScanner) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -540,21 +608,38 @@ fun AddFoodSheetContent(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
-                            .background(Color.Black, RoundedCornerShape(16.dp))
+                            .height(300.dp),
+                        contentAlignment = Alignment.Center
                     ) {
                         BarcodeScannerView(
                             onBarcodeScanned = onBarcodeScanned,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.padding(16.dp)
                         )
+                        
+                        if (scannerState is ScannerState.Loading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    WavyLoader()
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text("Identifying...", color = Color.White, style = MaterialTheme.typography.labelLarge)
+                                }
+                            }
+                        }
                     }
-                    
+
                     Button(
                         onClick = { showScanner = false },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
                     ) {
-                        Text("Cancel Scan", color = Color.White)
+                        Text("Cancel Scan", color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             } else {
@@ -569,10 +654,24 @@ fun AddFoodSheetContent(
                         when (state) {
                             is ScannerState.Loading -> {
                                 Box(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 24.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    PulsingDotMatrixLoader()
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        WavyLoader()
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            "Analyzing food...",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                             is ScannerState.Error -> {
@@ -586,62 +685,104 @@ fun AddFoodSheetContent(
                         }
                     }
 
-                    OutlinedTextField(
+                    ExpressiveTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Name") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                        label = "Name",
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        OutlinedTextField(
+                        ExpressiveTextField(
                             value = weightInput,
                             onValueChange = { weightInput = it },
-                            label = { Text("Weight (g)") },
+                            label = "Weight (g)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier.weight(1f)
                         )
-                        OutlinedTextField(
+                        ExpressiveTextField(
                             value = kcalInput,
                             onValueChange = { kcalInput = it },
-                            label = { Text("kcal") },
+                            label = "kcal",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier.weight(1f)
                         )
-                        OutlinedTextField(
+                        ExpressiveTextField(
                             value = proteinInput,
                             onValueChange = { proteinInput = it },
-                            label = { Text("Protein (g)") },
+                            label = "Prot (g)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier.weight(1f)
                         )
                     }
 
-                    Button(
+                    AnimatedContent(
+                        targetState = showMacros,
+                        label = "macrosTransition"
+                    ) { expanded ->
+                        if (expanded) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ExpressiveTextField(
+                                    value = fatInput,
+                                    onValueChange = { fatInput = it },
+                                    label = "Fat (g)",
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                ExpressiveTextField(
+                                    value = carbInput,
+                                    onValueChange = { carbInput = it },
+                                    label = "Carb (g)",
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                ExpressiveTextField(
+                                    value = fiberInput,
+                                    onValueChange = { fiberInput = it },
+                                    label = "Fib (g)",
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { showMacros = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = CircleShape,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.tertiary
+                                )
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Add more macros (Fat, Carbs, Fiber)")
+                            }
+                        }
+                    }
+
+                    ExpressiveButton(
                         onClick = {
                             val k = kcalInput.toIntOrNull() ?: 0
                             val p = proteinInput.toIntOrNull() ?: 0
-                            onAdd(name, k, p)
+                            val f = fatInput.toIntOrNull() ?: 0
+                            val c = carbInput.toIntOrNull() ?: 0
+                            val fib = fiberInput.toIntOrNull() ?: 0
+                            onAdd(name, k, p, f, c, fib)
                         },
                         enabled = isAddEnabled,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NothingRed,
-                            disabledContainerColor = Color.DarkGray
-                        )
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
                     ) {
-                        Text("Add to log", color = if (isAddEnabled) Color.White else Color.Gray)
+                        Text(
+                            "Add to log",
+                            color = if (isAddEnabled) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
         }
     }
 }
-

@@ -39,5 +39,7 @@ data class Nutriments(
     @SerialName("carbohydrates_100g")
     val carbohydrates100g: Double? = null,
     @SerialName("fat_100g")
-    val fat100g: Double? = null
+    val fat100g: Double? = null,
+    @SerialName("fiber_100g")
+    val fiber100g: Double? = null
 )

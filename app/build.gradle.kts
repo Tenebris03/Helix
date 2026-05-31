@@ -26,9 +26,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -104,7 +108,8 @@ implementation(libs.security.crypto)
 // Koin DI
 implementation(libs.koin.android)
 implementation(libs.koin.androidx.compose)
-implementation(libs.koin.androidx.workmanager)
+    implementation(libs.koin.androidx.workmanager)
+    implementation(libs.material3.adaptive.navigation.suite)
 
     // Baseline Profile
     baselineProfile(project(":baselineprofile"))

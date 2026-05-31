@@ -25,14 +25,17 @@ class FoodVisionService(private val generativeModel: GenerativeModel) {
                 Identify the primary food item and estimate:
                 1. The food name (short, generic)
                 2. The estimated portion size on the plate in grams
-                3. Nutritional values PER 100g as a fallback estimate
+                3. Nutritional values PER 100g as a fallback estimate (calories, protein, fat, carbohydrates, fiber)
 
                 Return ONLY a valid JSON object with no preamble:
                 {
                   "name": "Grilled Chicken Salad",
                   "estimatedWeightGrams": 300,
                   "fallbackCalories100g": 150,
-                  "fallbackProtein100g": 25
+                  "fallbackProtein100g": 25,
+                  "fallbackFat100g": 5,
+                  "fallbackCarbs100g": 10,
+                  "fallbackFiber100g": 3
                 }
                 """.trimIndent(),
             )
@@ -56,6 +59,9 @@ class FoodVisionService(private val generativeModel: GenerativeModel) {
                         name = dto.name,
                         calories100g = dto.fallbackCalories100g,
                         protein100g = dto.fallbackProtein100g,
+                        fat100g = dto.fallbackFat100g,
+                        carbohydrates100g = dto.fallbackCarbs100g,
+                        fiber100g = dto.fallbackFiber100g,
                         estimatedWeightGrams = dto.estimatedWeightGrams
                     )
                 }
@@ -80,6 +86,9 @@ class FoodVisionService(private val generativeModel: GenerativeModel) {
         val name: String,
         val estimatedWeightGrams: Int,
         val fallbackCalories100g: Int,
-        val fallbackProtein100g: Int
+        val fallbackProtein100g: Int,
+        val fallbackFat100g: Int = 0,
+        val fallbackCarbs100g: Int = 0,
+        val fallbackFiber100g: Int = 0
     )
 }
