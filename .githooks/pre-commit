@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+echo "=== Pre-commit quality gates ==="
+
+echo "  ktlintFormat..."
+./gradlew ktlintFormat --quiet
+git add -u
+
+echo "  ktlintCheck..."
+./gradlew ktlintCheck --quiet
+
+echo "  detekt..."
+./gradlew detekt --quiet
+
+echo "  ArchitectureTest..."
+./gradlew :app:testDebugUnitTest --tests "*ArchitectureTest*" --quiet
+
+echo "=== All gates passed ==="
