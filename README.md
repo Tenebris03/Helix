@@ -12,21 +12,36 @@ Personal Android app for logging food, tracking weight, and getting unsolicited 
 ## Module architecture
 
 ```mermaid
-graph TD
-    app[":app"] --> dash[":feature:dashboard"]
-    app --> track[":feature:tracking"]
-    app --> onb[":feature:onboarding"]
-    app --> sett[":feature:settings"]
-    dash --> ui[":core:ui"]
-    dash --> data[":core:data"]
-    track --> ui
-    track --> data
-    onb --> ui
-    onb --> data
-    sett --> ui
-    sett --> data
-    data --> model[":core:model"]
-    ui --> model
+graph LR
+    subgraph App Shell
+        A[:app]
+    end
+
+    subgraph Features Layer
+        B[:feature:dashboard]
+        C[:feature:tracking]
+        D[:feature:onboarding]
+        E[:feature:settings]
+    end
+
+    subgraph Core Bedrock
+        F[:core:data]
+        G[:core:ui]
+        H[:core:model]
+    end
+
+    A --> B
+    A --> C
+    A --> D
+    A --> E
+
+    B --> F & G
+    C --> F & G
+    D --> F & G
+    E --> F & G
+
+    F --> H
+    G --> H
 ```
 
 - **`:core:model`** — pure Kotlin JVM, zero Android dependencies. Data classes + serialization.
