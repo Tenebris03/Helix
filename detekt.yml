@@ -1,0 +1,29 @@
+build:
+  maxIssues: 50
+
+# Disable noisy rules for a personal project
+style:
+  MagicNumber:
+    active: false
+  ForbiddenComment:
+    active: false
+  MaxLineLength:
+    active: false
+  UnusedPrivateMember:
+    active: false
+
+complexity:
+  LongParameterList:
+    active: false
+  LargeClass:
+    active: false
+
+comments:
+  CommentOverPrivateFunction:
+    active: false
+  CommentOverPrivateProperty:
+    active: false
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false

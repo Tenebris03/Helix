@@ -1,5 +1,8 @@
 package com.tenebris.health_tracker.ui.dashboard
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -8,14 +11,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.animation.core.updateTransition
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,36 +23,34 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCodeScanner
-import android.graphics.Bitmap
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.ui.coach.CoachUiState
 import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.components.*
 import com.tenebris.health_tracker.ui.scanner.BarcodeScannerView
-import com.tenebris.health_tracker.ui.theme.HealthTrackerTheme
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    coachViewModel: CoachViewModel
+    coachViewModel: CoachViewModel,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
@@ -84,7 +77,7 @@ fun DashboardScreen(
             onBarcodeScanned = viewModel::onBarcodeScanned,
             onFoodImageCaptured = viewModel::onFoodImageCaptured,
             onResetScanner = viewModel::resetScanner,
-            onDismissCoach = coachViewModel::dismiss
+            onDismissCoach = coachViewModel::dismiss,
         )
     }
 }
@@ -101,45 +94,47 @@ fun DashboardContent(
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit,
-    onDismissCoach: () -> Unit = {}
+    onDismissCoach: () -> Unit = {},
 ) {
     var showSheet by remember { mutableStateOf(false) }
     var sheetType by remember { mutableStateOf<SheetType>(SheetType.Choice) }
     val sheetState = rememberModalBottomSheetState()
-    
+
     var fabExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         floatingActionButton = {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 16.dp, end = 16.dp),
-                contentAlignment = Alignment.BottomEnd
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 16.dp, end = 16.dp),
+                contentAlignment = Alignment.BottomEnd,
             ) {
                 FloatingActionButtonMenu(
                     expanded = fabExpanded,
                     button = {
                         val tertiaryColor = MaterialTheme.colorScheme.tertiary
                         val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer
-                        
+
                         ToggleFloatingActionButton(
                             checked = fabExpanded,
                             onCheckedChange = { fabExpanded = it },
                             containerColor = { progress ->
-                                androidx.compose.ui.graphics.lerp(tertiaryColor, primaryContainerColor, progress)
-                            }
-                        ) { 
+                                androidx.compose.ui.graphics
+                                    .lerp(tertiaryColor, primaryContainerColor, progress)
+                            },
+                        ) {
                             // Access checkedProgress through ToggleFloatingActionButtonScope
                             val rotation = checkedProgress * 45f
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = "Add",
                                 modifier = Modifier.graphicsLayer { rotationZ = rotation },
-                                tint = if (fabExpanded) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiary
+                                tint = if (fabExpanded) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onTertiary,
                             )
                         }
-                    }
+                    },
                 ) {
                     FloatingActionButtonMenuItem(
                         onClick = {
@@ -148,7 +143,7 @@ fun DashboardContent(
                             showSheet = true
                         },
                         icon = { Icon(Icons.Default.Add, "Recent") },
-                        text = { Text("Recent") }
+                        text = { Text("Recent") },
                     )
                     FloatingActionButtonMenuItem(
                         onClick = {
@@ -157,21 +152,22 @@ fun DashboardContent(
                             showSheet = true
                         },
                         icon = { Icon(Icons.Default.Add, "New") },
-                        text = { Text("New food") }
+                        text = { Text("New food") },
                     )
                 }
             }
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             ExpressiveHeader(
                 text = "Dashboard",
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -179,7 +175,7 @@ fun DashboardContent(
             DatePickerTimeline(
                 selectedDate = state.selectedDate,
                 onDateSelected = onDateSelected,
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(bottom = 32.dp),
             )
 
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -187,39 +183,42 @@ fun DashboardContent(
                     caloriesProgress = if (state.targetCalories > 0) state.totalCalories.toFloat() / state.targetCalories else 0f,
                     proteinProgress = if (state.targetProtein > 0) state.totalProtein.toFloat() / state.targetProtein else 0f,
                     currentCalories = state.totalCalories,
-                    targetCalories = state.targetCalories
+                    targetCalories = state.targetCalories,
                 )
             }
 
             if (coachState.apiKeyInvalid) {
                 ExpressiveCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(50))
+                            modifier =
+                                Modifier
+                                    .size(10.dp)
+                                    .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(50)),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "API KEY INVALID",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 2.sp
-                                ),
-                                color = MaterialTheme.colorScheme.tertiary
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 2.sp,
+                                    ),
+                                color = MaterialTheme.colorScheme.tertiary,
                             )
                             Text(
                                 text = "Update your Gemini API key in Settings to reactivate the Invisible Coach.",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             )
                         }
                     }
@@ -230,7 +229,7 @@ fun DashboardContent(
                 headline = coachState.headline ?: "",
                 body = coachState.body ?: "",
                 visible = coachState.visible,
-                onDismiss = onDismissCoach
+                onDismiss = onDismissCoach,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -239,13 +238,13 @@ fun DashboardContent(
                 text = "Food log",
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
             )
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize().testTag("food_list"),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.entries, key = { it.id }) { entry ->
                     SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
@@ -262,11 +261,11 @@ fun DashboardContent(
                 sheetState = sheetState,
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                 shape = RoundedCornerShape(topStart = 38.dp, topEnd = 38.dp),
-                dragHandle = null
+                dragHandle = null,
             ) {
                 AnimatedContent(
                     targetState = sheetType,
-                    label = "sheetTypeTransition"
+                    label = "sheetTypeTransition",
                 ) { type ->
                     when (type) {
                         SheetType.PreviouslyAdded -> {
@@ -275,7 +274,7 @@ fun DashboardContent(
                                 onAdd = { entry ->
                                     onAddFood(entry.name, entry.calories, entry.protein, entry.fat, entry.carbohydrates, entry.fiber)
                                     showSheet = false
-                                }
+                                },
                             )
                         }
                         SheetType.AddFood -> {
@@ -287,7 +286,7 @@ fun DashboardContent(
                                 },
                                 onBarcodeScanned = onBarcodeScanned,
                                 onFoodImageCaptured = onFoodImageCaptured,
-                                onResetScanner = onResetScanner
+                                onResetScanner = onResetScanner,
                             )
                         }
                         else -> {
@@ -302,75 +301,88 @@ fun DashboardContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SwipeToDeleteFoodCard(entry: FoodEntry, onDelete: () -> Unit) {
+fun SwipeToDeleteFoodCard(
+    entry: FoodEntry,
+    onDelete: () -> Unit,
+) {
     val haptic = LocalHapticFeedback.current
-    val swipeState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onDelete()
-                true
-            } else {
-                false
-            }
-        },
-        positionalThreshold = { it * 0.4f }
-    )
+    val swipeState =
+        rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                if (value == SwipeToDismissBoxValue.EndToStart) {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onDelete()
+                    true
+                } else {
+                    false
+                }
+            },
+            positionalThreshold = { it * 0.4f },
+        )
 
     SwipeToDismissBox(
         state = swipeState,
         enableDismissFromStartToEnd = false,
         backgroundContent = {
-            val color = if (swipeState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
-                MaterialTheme.colorScheme.errorContainer
-            } else Color.Transparent
+            val color =
+                if (swipeState.dismissDirection == SwipeToDismissBoxValue.EndToStart) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    Color.Transparent
+                }
 
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color, MaterialTheme.shapes.large)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(color, MaterialTheme.shapes.large)
+                        .padding(horizontal = 20.dp),
+                contentAlignment = Alignment.CenterEnd,
             ) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
         },
         content = {
             FoodCard(entry = entry, onDelete = onDelete)
-        }
+        },
     )
 }
 
 @Composable
-fun FoodCard(entry: FoodEntry, onDelete: () -> Unit) {
+fun FoodCard(
+    entry: FoodEntry,
+    onDelete: () -> Unit,
+) {
     ElevatedCard(
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
+        colors =
+            CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = entry.name,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text = "${entry.calories} kcal • P: ${entry.protein}g • F: ${entry.fat}g • C: ${entry.carbohydrates}g",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.secondary,
                 )
             }
             IconButton(onClick = onDelete) {
@@ -381,23 +393,26 @@ fun FoodCard(entry: FoodEntry, onDelete: () -> Unit) {
 }
 
 enum class SheetType {
-    Choice, PreviouslyAdded, AddFood
+    Choice,
+    PreviouslyAdded,
+    AddFood,
 }
 
 @Composable
 fun PreviouslyAddedSheetContent(
     recentEntries: List<FoodEntry>,
-    onAdd: (FoodEntry) -> Unit
+    onAdd: (FoodEntry) -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             "Previously added",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold
-            )
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
         )
 
         if (recentEntries.isEmpty()) {
@@ -407,44 +422,47 @@ fun PreviouslyAddedSheetContent(
         } else {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 400.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(recentEntries) { entry ->
                     ElevatedCard(
                         shape = MaterialTheme.shapes.medium,
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
+                        colors =
+                            CardDefaults.elevatedCardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
                         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(entry.name, style = MaterialTheme.typography.titleMedium)
                                 Text(
                                     "${entry.calories} kcal • P: ${entry.protein}g • F: ${entry.fat}g • C: ${entry.carbohydrates}g",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                             FilledIconButton(
                                 onClick = { onAdd(entry) },
                                 modifier = Modifier.size(36.dp),
-                                colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiary
-                                )
+                                colors =
+                                    IconButtonDefaults.filledIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.tertiary,
+                                    ),
                             ) {
                                 Icon(
                                     Icons.Default.Add,
                                     contentDescription = "Add",
                                     tint = MaterialTheme.colorScheme.onTertiary,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(20.dp),
                                 )
                             }
                         }
@@ -462,7 +480,7 @@ fun AddFoodSheetContent(
     onAdd: (String, Int, Int, Int, Int, Int) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
-    onResetScanner: () -> Unit
+    onResetScanner: () -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
     var kcalInput by remember { mutableStateOf("") }
@@ -477,29 +495,32 @@ fun AddFoodSheetContent(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val barcodePermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            showScanner = true
+    val barcodePermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            if (isGranted) {
+                showScanner = true
+            }
         }
-    }
 
-    val visionCameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            onFoodImageCaptured(bitmap)
+    val visionCameraLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.TakePicturePreview(),
+        ) { bitmap ->
+            if (bitmap != null) {
+                onFoodImageCaptured(bitmap)
+            }
         }
-    }
 
-    val visionPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            visionCameraLauncher.launch(null)
+    val visionPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted ->
+            if (isGranted) {
+                visionCameraLauncher.launch(null)
+            }
         }
-    }
 
     var baseCalories by remember { mutableStateOf(0) }
     var baseProtein by remember { mutableStateOf(0) }
@@ -537,23 +558,25 @@ fun AddFoodSheetContent(
     }
 
     Column(
-        modifier = Modifier
-            .padding(24.dp)
-            .fillMaxWidth()
-            .padding(bottom = 32.dp, top = 16.dp)
-            .animateContentSize(animationSpec = tween(500)),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(bottom = 32.dp, top = 16.dp)
+                .animateContentSize(animationSpec = tween(500)),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 "Add food",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold
-                )
+                style =
+                    MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
 
             Row {
@@ -569,7 +592,7 @@ fun AddFoodSheetContent(
                     Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "AI Vision",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -589,7 +612,7 @@ fun AddFoodSheetContent(
                     Icon(
                         Icons.Default.QrCodeScanner,
                         contentDescription = "Scan barcode",
-                        tint = if (showScanner) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface
+                        tint = if (showScanner) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -599,29 +622,31 @@ fun AddFoodSheetContent(
             targetState = showScanner,
             transitionSpec = {
                 fadeIn(animationSpec = tween(300)) togetherWith
-                        fadeOut(animationSpec = tween(300))
+                    fadeOut(animationSpec = tween(300))
             },
-            label = "scannerTransition"
+            label = "scannerTransition",
         ) { targetShowScanner ->
             if (targetShowScanner) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(300.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
                         BarcodeScannerView(
                             onBarcodeScanned = onBarcodeScanned,
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
                         )
-                        
+
                         if (scannerState is ScannerState.Loading) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.3f)),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     WavyLoader()
@@ -635,9 +660,10 @@ fun AddFoodSheetContent(
                     Button(
                         onClick = { showScanner = false },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            ),
                     ) {
                         Text("Cancel Scan", color = MaterialTheme.colorScheme.onSurface)
                     }
@@ -649,27 +675,28 @@ fun AddFoodSheetContent(
                         transitionSpec = {
                             fadeIn() togetherWith fadeOut()
                         },
-                        label = "scannerStateTransition"
+                        label = "scannerStateTransition",
                     ) { state ->
                         when (state) {
                             is ScannerState.Loading -> {
                                 Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 24.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large),
-                                    contentAlignment = Alignment.Center
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 24.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceContainerHigh, MaterialTheme.shapes.large),
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
+                                        horizontalAlignment = Alignment.CenterHorizontally,
                                     ) {
                                         WavyLoader()
                                         Spacer(modifier = Modifier.height(12.dp))
                                         Text(
                                             "Analyzing food...",
                                             style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = MaterialTheme.colorScheme.primary,
                                         )
                                     }
                                 }
@@ -678,7 +705,7 @@ fun AddFoodSheetContent(
                                 Text(
                                     text = state.message,
                                     color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodySmall,
                                 )
                             }
                             else -> {}
@@ -689,7 +716,7 @@ fun AddFoodSheetContent(
                         value = name,
                         onValueChange = { name = it },
                         label = "Name",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -698,27 +725,27 @@ fun AddFoodSheetContent(
                             onValueChange = { weightInput = it },
                             label = "Weight (g)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         ExpressiveTextField(
                             value = kcalInput,
                             onValueChange = { kcalInput = it },
                             label = "kcal",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         ExpressiveTextField(
                             value = proteinInput,
                             onValueChange = { proteinInput = it },
                             label = "Prot (g)",
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
 
                     AnimatedContent(
                         targetState = showMacros,
-                        label = "macrosTransition"
+                        label = "macrosTransition",
                     ) { expanded ->
                         if (expanded) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -727,21 +754,21 @@ fun AddFoodSheetContent(
                                     onValueChange = { fatInput = it },
                                     label = "Fat (g)",
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                                 ExpressiveTextField(
                                     value = carbInput,
                                     onValueChange = { carbInput = it },
                                     label = "Carb (g)",
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                                 ExpressiveTextField(
                                     value = fiberInput,
                                     onValueChange = { fiberInput = it },
                                     label = "Fib (g)",
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         } else {
@@ -749,9 +776,10 @@ fun AddFoodSheetContent(
                                 onClick = { showMacros = true },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = CircleShape,
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.tertiary
-                                )
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.tertiary,
+                                    ),
                             ) {
                                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -770,15 +798,16 @@ fun AddFoodSheetContent(
                             onAdd(name, k, p, f, c, fib)
                         },
                         enabled = isAddEnabled,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                         containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = MaterialTheme.colorScheme.onTertiary
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
                     ) {
                         Text(
                             "Add to log",
-                            color = if (isAddEnabled) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isAddEnabled) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

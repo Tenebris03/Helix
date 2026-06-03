@@ -14,5 +14,5 @@ data class ProfileEntry(
     val gender: String,
     val goal: String,
     val offset: Int,
-    val proteinTarget: Int
+    val proteinTarget: Int,
 )

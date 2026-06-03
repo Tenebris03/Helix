@@ -8,5 +8,5 @@ data class WeightEntry(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val weight: Float,
-    val date: String // ISO-8601 format yyyy-MM-dd
+    val date: String, // ISO-8601 format yyyy-MM-dd
 )

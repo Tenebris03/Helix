@@ -30,7 +30,10 @@ interface FoodDao {
     fun getUniqueRecentEntries(): Flow<List<FoodEntry>>
 
     @Query("SELECT SUM(calories) FROM food_entries WHERE date >= :startDate AND date <= :endDate")
-    suspend fun getTotalCaloriesInRange(startDate: String, endDate: String): Int?
+    suspend fun getTotalCaloriesInRange(
+        startDate: String,
+        endDate: String,
+    ): Int?
 
     @Query("SELECT date, SUM(calories) as totalCalories FROM food_entries WHERE date >= :startDate GROUP BY date ORDER BY date")
     suspend fun getDailyCaloriesInRange(startDate: String): List<DailyCalorieSum>
@@ -39,5 +42,8 @@ interface FoodDao {
     suspend fun getDistinctFoodDays(): Int
 
     @Query("SELECT SUM(protein) FROM food_entries WHERE date >= :startDate AND date <= :endDate")
-    suspend fun getTotalProteinInRange(startDate: String, endDate: String): Int?
+    suspend fun getTotalProteinInRange(
+        startDate: String,
+        endDate: String,
+    ): Int?
 }

@@ -7,5 +7,5 @@ data class FoodRecognitionResult(
     val fat100g: Int = 0,
     val carbohydrates100g: Int = 0,
     val fiber100g: Int = 0,
-    val estimatedWeightGrams: Int
+    val estimatedWeightGrams: Int,
 )

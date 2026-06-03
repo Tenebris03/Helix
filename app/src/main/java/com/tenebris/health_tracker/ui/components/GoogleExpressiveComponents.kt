@@ -25,30 +25,37 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun ExpressiveHeader(text: String, modifier: Modifier = Modifier) {
+fun ExpressiveHeader(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
     Text(
         text = text,
-        style = MaterialTheme.typography.displaySmall.copy(
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = (-0.5).sp
-        ),
-        modifier = modifier
+        style =
+            MaterialTheme.typography.displaySmall.copy(
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.5).sp,
+            ),
+        modifier = modifier,
     )
 }
 
 @Composable
 fun ExpressiveCard(
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    elevation: androidx.compose.ui.unit.Dp = 2.dp,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    ElevatedCard(
+    Card(
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = containerColor,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -60,7 +67,7 @@ fun ExpressiveSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     modifier: Modifier = Modifier,
-    activeColor: Color = MaterialTheme.colorScheme.primary
+    activeColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     Slider(
         value = value,
@@ -73,7 +80,7 @@ fun ExpressiveSlider(
                 shape = CircleShape,
                 color = Color.White,
                 modifier = Modifier.size(16.dp),
-                shadowElevation = 2.dp
+                shadowElevation = 2.dp,
             ) {}
         },
         track = { sliderState ->
@@ -82,12 +89,13 @@ fun ExpressiveSlider(
                 modifier = Modifier.height(24.dp),
                 thumbTrackGapSize = 0.dp,
                 trackInsideCornerSize = 12.dp,
-                colors = SliderDefaults.colors(
-                    activeTrackColor = activeColor,
-                    inactiveTrackColor = activeColor.copy(alpha = 0.15f)
-                )
+                colors =
+                    SliderDefaults.colors(
+                        activeTrackColor = activeColor,
+                        inactiveTrackColor = activeColor.copy(alpha = 0.15f),
+                    ),
             )
-        }
+        },
     )
 }
 
@@ -97,7 +105,7 @@ fun ExpressiveTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default
+    keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
 ) {
     OutlinedTextField(
         value = value,
@@ -106,14 +114,15 @@ fun ExpressiveTextField(
         modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
         keyboardOptions = keyboardOptions,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            unfocusedBorderColor = Color.Transparent,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            focusedLabelColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedLabelColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -124,19 +133,20 @@ fun ExpressiveButton(
     containerColor: Color = MaterialTheme.colorScheme.primary,
     contentColor: Color = MaterialTheme.colorScheme.onPrimary,
     enabled: Boolean = true,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         shape = CircleShape, // Pill shaped
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        content = content
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = containerColor,
+                contentColor = contentColor,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            ),
+        content = content,
     )
 }
 
@@ -147,93 +157,99 @@ fun TachometerGauge(
     proteinProgress: Float,
     currentCalories: Int,
     targetCalories: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val colorPrimary = MaterialTheme.colorScheme.primary
     val colorTertiary = MaterialTheme.colorScheme.tertiary
 
-    val animatedCalories = animateFloatAsState(
-        targetValue = caloriesProgress.coerceIn(0f, 1f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "caloriesProgress"
-    )
-    val animatedProtein = animateFloatAsState(
-        targetValue = proteinProgress.coerceIn(0f, 1f),
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "proteinProgress"
-    )
+    val animatedCalories =
+        animateFloatAsState(
+            targetValue = caloriesProgress.coerceIn(0f, 1f),
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow,
+                ),
+            label = "caloriesProgress",
+        )
+    val animatedProtein =
+        animateFloatAsState(
+            targetValue = proteinProgress.coerceIn(0f, 1f),
+            animationSpec =
+                spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow,
+                ),
+            label = "proteinProgress",
+        )
 
     Box(contentAlignment = Alignment.Center, modifier = modifier) {
         Spacer(
-            modifier = Modifier
-                .size(240.dp)
-                .drawWithCache {
-                    val strokeWidth = 20.dp.toPx()
-                    val innerStrokeWidth = 12.dp.toPx()
-                    val backgroundArcColor = colorTertiary.copy(alpha = 0.1f)
+            modifier =
+                Modifier
+                    .size(240.dp)
+                    .drawWithCache {
+                        val strokeWidth = 20.dp.toPx()
+                        val innerStrokeWidth = 12.dp.toPx()
+                        val backgroundArcColor = colorTertiary.copy(alpha = 0.1f)
 
-                    val innerArcSize = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx())
-                    val innerArcOffset = Offset(30.dp.toPx(), 30.dp.toPx())
+                        val innerArcSize = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx())
+                        val innerArcOffset = Offset(30.dp.toPx(), 30.dp.toPx())
 
-                    onDrawBehind {
-                        drawArc(
-                            color = backgroundArcColor,
-                            startAngle = 135f,
-                            sweepAngle = 270f,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                            size = size
-                        )
+                        onDrawBehind {
+                            drawArc(
+                                color = backgroundArcColor,
+                                startAngle = 135f,
+                                sweepAngle = 270f,
+                                useCenter = false,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                                size = size,
+                            )
 
-                        drawArc(
-                            color = backgroundArcColor,
-                            startAngle = 135f,
-                            sweepAngle = 270f,
-                            useCenter = false,
-                            style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                            size = innerArcSize,
-                            topLeft = innerArcOffset
-                        )
+                            drawArc(
+                                color = backgroundArcColor,
+                                startAngle = 135f,
+                                sweepAngle = 270f,
+                                useCenter = false,
+                                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
+                                size = innerArcSize,
+                                topLeft = innerArcOffset,
+                            )
 
-                        drawArc(
-                            color = colorPrimary,
-                            startAngle = 135f,
-                            sweepAngle = 270f * animatedCalories.value,
-                            useCenter = false,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-                            size = size
-                        )
+                            drawArc(
+                                color = colorPrimary,
+                                startAngle = 135f,
+                                sweepAngle = 270f * animatedCalories.value,
+                                useCenter = false,
+                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                                size = size,
+                            )
 
-                        drawArc(
-                            color = colorTertiary,
-                            startAngle = 135f,
-                            sweepAngle = 270f * animatedProtein.value,
-                            useCenter = false,
-                            style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                            size = innerArcSize,
-                            topLeft = innerArcOffset
-                        )
-                    }
-                }
+                            drawArc(
+                                color = colorTertiary,
+                                startAngle = 135f,
+                                sweepAngle = 270f * animatedProtein.value,
+                                useCenter = false,
+                                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
+                                size = innerArcSize,
+                                topLeft = innerArcOffset,
+                            )
+                        }
+                    },
         )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "$currentCalories",
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontWeight = FontWeight.Bold
-                )
+                style =
+                    MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
             )
             Text(
                 text = "/ $targetCalories kcal",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
             )
         }
     }
@@ -243,7 +259,7 @@ fun TachometerGauge(
 fun DatePickerTimeline(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val dates = ((-30..30).map { LocalDate.now().plusDays(it.toLong()) })
     val listState = rememberLazyListState()
@@ -258,7 +274,7 @@ fun DatePickerTimeline(
         state = listState,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
         items(dates) { date ->
             val isSelected = date == selectedDate
@@ -266,26 +282,29 @@ fun DatePickerTimeline(
                 shape = MaterialTheme.shapes.medium,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .width(70.dp)
-                    .clickable { onDateSelected(date) }
+                modifier =
+                    Modifier
+                        .width(70.dp)
+                        .clickable { onDateSelected(date) },
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = 8.dp),
                 ) {
                     Text(
                         text = date.format(formatterMonth).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp
-                        )
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                            ),
                     )
                     Text(
                         text = date.format(formatterDay).uppercase(),
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            lineHeight = 16.sp
-                        ),
-                        textAlign = TextAlign.Center
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                lineHeight = 16.sp,
+                            ),
+                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -300,11 +319,12 @@ fun WavyLoader(modifier: Modifier = Modifier) {
     val wavyProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wavyProgress"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "wavyProgress",
     )
 
     CircularWavyProgressIndicator(
@@ -313,6 +333,6 @@ fun WavyLoader(modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.tertiary,
         trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         amplitude = { 1f },
-        wavelength = 15.dp
+        wavelength = 15.dp,
     )
 }

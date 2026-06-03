@@ -15,8 +15,9 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
-class UserPreferences(private val context: Context) {
-
+class UserPreferences(
+    private val context: Context,
+) {
     companion object {
         val IS_ONBOARDED = booleanPreferencesKey("is_onboarded")
         val TDEE = intPreferencesKey("tdee") // This will now act as a fallback or be updated
@@ -24,7 +25,7 @@ class UserPreferences(private val context: Context) {
         val OFFSET = intPreferencesKey("offset")
         val PROTEIN_TARGET = intPreferencesKey("protein_target")
         val ACTIVITY_LEVEL = floatPreferencesKey("activity_level")
-        
+
         // New keys to preserve profile for dynamic BMR
         val GENDER = stringPreferencesKey("gender")
         val AGE = intPreferencesKey("age")
@@ -43,7 +44,7 @@ class UserPreferences(private val context: Context) {
     val offset: Flow<Int> = context.dataStore.data.map { it[OFFSET] ?: 0 }
     val proteinTarget: Flow<Int> = context.dataStore.data.map { it[PROTEIN_TARGET] ?: 150 }
     val activityLevel: Flow<Float> = context.dataStore.data.map { it[ACTIVITY_LEVEL] ?: 1.2f }
-    
+
     val gender: Flow<String> = context.dataStore.data.map { it[GENDER] ?: "Male" }
     val age: Flow<Int> = context.dataStore.data.map { it[AGE] ?: 25 }
     val height: Flow<Int> = context.dataStore.data.map { it[HEIGHT] ?: 170 }
@@ -60,20 +61,21 @@ class UserPreferences(private val context: Context) {
         val activityLevel: Float,
         val gender: String,
         val age: Int,
-        val height: Int
+        val height: Int,
     )
 
-    val snapshot: Flow<PrefsSnapshot> = context.dataStore.data.map { prefs ->
-        PrefsSnapshot(
-            goal = prefs[GOAL] ?: "Maintain",
-            offset = prefs[OFFSET] ?: 0,
-            proteinTarget = prefs[PROTEIN_TARGET] ?: 150,
-            activityLevel = prefs[ACTIVITY_LEVEL] ?: 1.2f,
-            gender = prefs[GENDER] ?: "Male",
-            age = prefs[AGE] ?: 25,
-            height = prefs[HEIGHT] ?: 170
-        )
-    }
+    val snapshot: Flow<PrefsSnapshot> =
+        context.dataStore.data.map { prefs ->
+            PrefsSnapshot(
+                goal = prefs[GOAL] ?: "Maintain",
+                offset = prefs[OFFSET] ?: 0,
+                proteinTarget = prefs[PROTEIN_TARGET] ?: 150,
+                activityLevel = prefs[ACTIVITY_LEVEL] ?: 1.2f,
+                gender = prefs[GENDER] ?: "Male",
+                age = prefs[AGE] ?: 25,
+                height = prefs[HEIGHT] ?: 170,
+            )
+        }
 
     suspend fun saveCoachInterventionTimestamp() {
         context.dataStore.edit { prefs ->
@@ -81,7 +83,16 @@ class UserPreferences(private val context: Context) {
         }
     }
 
-    suspend fun saveCoachResponse(headline: String, body: String) {
+    suspend fun clearCoachInterventionTimestamp() {
+        context.dataStore.edit { prefs ->
+            prefs.remove(LAST_COACH_INTERVENTION)
+        }
+    }
+
+    suspend fun saveCoachResponse(
+        headline: String,
+        body: String,
+    ) {
         context.dataStore.edit { prefs ->
             prefs[COACH_HEADLINE] = headline
             prefs[COACH_BODY] = body
@@ -102,14 +113,14 @@ class UserPreferences(private val context: Context) {
     }
 
     suspend fun saveOnboardingData(
-        tdee: Int, 
-        goal: String, 
-        offset: Int, 
-        proteinTarget: Int, 
+        tdee: Int,
+        goal: String,
+        offset: Int,
+        proteinTarget: Int,
         activityLevel: Float,
         gender: String,
         age: Int,
-        height: Int
+        height: Int,
     ) {
         context.dataStore.edit { prefs ->
             prefs[IS_ONBOARDED] = true

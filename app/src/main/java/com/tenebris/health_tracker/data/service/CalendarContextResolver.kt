@@ -1,13 +1,13 @@
 package com.tenebris.health_tracker.data.service
 
-import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.CalendarContract
 
-class CalendarContextResolver(private val context: Context) {
-
+class CalendarContextResolver(
+    private val context: Context,
+) {
     fun getRecentCalendarEvents(windowHours: Long = 3): String {
         if (!hasCalendarPermission()) return ""
 
@@ -16,11 +16,12 @@ class CalendarContextResolver(private val context: Context) {
         val windowEnd = now + windowHours * 3600000L
 
         val uri = CalendarContract.Instances.CONTENT_URI
-        val projection = arrayOf(
-            CalendarContract.Instances.TITLE,
-            CalendarContract.Instances.BEGIN,
-            CalendarContract.Instances.END
-        )
+        val projection =
+            arrayOf(
+                CalendarContract.Instances.TITLE,
+                CalendarContract.Instances.BEGIN,
+                CalendarContract.Instances.END,
+            )
         val selection = "${CalendarContract.Instances.BEGIN} >= ? AND ${CalendarContract.Instances.END} <= ?"
         val selectionArgs = arrayOf(windowStart.toString(), windowEnd.toString())
 
@@ -28,25 +29,30 @@ class CalendarContextResolver(private val context: Context) {
         var cursor: Cursor? = null
 
         try {
-            val instanceUri = Uri.parse(
-                "content://com.android.calendar/instances/when/${windowStart}/${windowEnd}"
-            )
-            cursor = context.contentResolver.query(
-                instanceUri,
-                projection, null, null,
-                "${CalendarContract.Instances.BEGIN} ASC"
-            )
+            val instanceUri =
+                Uri.parse(
+                    "content://com.android.calendar/instances/when/$windowStart/$windowEnd",
+                )
+            cursor =
+                context.contentResolver.query(
+                    instanceUri,
+                    projection,
+                    null,
+                    null,
+                    "${CalendarContract.Instances.BEGIN} ASC",
+                )
 
             cursor?.use { c ->
                 val titleIdx = c.getColumnIndex(CalendarContract.Instances.TITLE)
                 while (c.moveToNext()) {
                     val title = c.getString(titleIdx) ?: continue
-                    val tag = when {
-                        title.contains("urgent", ignoreCase = true) -> "(urgent)"
-                        title.contains("deadline", ignoreCase = true) -> "(deadline)"
-                        title.contains("review", ignoreCase = true) -> "(review)"
-                        else -> ""
-                    }
+                    val tag =
+                        when {
+                            title.contains("urgent", ignoreCase = true) -> "(urgent)"
+                            title.contains("deadline", ignoreCase = true) -> "(deadline)"
+                            title.contains("review", ignoreCase = true) -> "(review)"
+                            else -> ""
+                        }
                     events.add("\"$title\" $tag")
                 }
             }
@@ -60,12 +66,11 @@ class CalendarContextResolver(private val context: Context) {
         return "${events.joinToString(", ")}$backToBack"
     }
 
-    private fun hasCalendarPermission(): Boolean {
-        return try {
+    private fun hasCalendarPermission(): Boolean =
+        try {
             val permission = android.Manifest.permission.READ_CALENDAR
             context.checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
         } catch (_: Exception) {
             false
         }
-    }
 }

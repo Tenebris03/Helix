@@ -2,14 +2,13 @@ package com.tenebris.health_tracker.ui.onboarding
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.tenebris.health_tracker.ui.components.*
@@ -28,7 +27,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel) {
         onUpdateActivity = { viewModel.updateActivityLevel(it) },
         onUpdateGoal = { viewModel.updateGoal(it) },
         onUpdateOffset = { viewModel.updateOffset(it) },
-        onComplete = { viewModel.completeOnboarding() }
+        onComplete = { viewModel.completeOnboarding() },
     )
 }
 
@@ -42,19 +41,20 @@ fun OnboardingContent(
     onUpdateActivity: (Float) -> Unit,
     onUpdateGoal: (String) -> Unit,
     onUpdateOffset: (Int) -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .statusBarsPadding()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .statusBarsPadding()
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(modifier = Modifier.height(32.dp))
             ExpressiveHeader(text = "Welcome")
@@ -69,20 +69,22 @@ fun OnboardingContent(
                             onClick = { onUpdateGender("Male") },
                             label = { Text("Male") },
                             shape = CircleShape,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onTertiary
-                            )
+                            colors =
+                                FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                ),
                         )
                         FilterChip(
                             selected = state.gender == "Female",
                             onClick = { onUpdateGender("Female") },
                             label = { Text("Female") },
                             shape = CircleShape,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onTertiary
-                            )
+                            colors =
+                                FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                ),
                         )
                     }
 
@@ -91,21 +93,21 @@ fun OnboardingContent(
                         onValueChange = onUpdateAge,
                         label = "Age",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     ExpressiveTextField(
                         value = state.height,
                         onValueChange = onUpdateHeight,
                         label = "Height (cm)",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     ExpressiveTextField(
                         value = state.weight,
                         onValueChange = onUpdateWeight,
                         label = "Weight (kg)",
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -115,7 +117,7 @@ fun OnboardingContent(
                         onValueChange = onUpdateActivity,
                         valueRange = 1.0f..2.0f,
                         steps = 9,
-                        activeColor = MaterialTheme.colorScheme.tertiary
+                        activeColor = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
@@ -129,7 +131,7 @@ fun OnboardingContent(
                                 RadioButton(
                                     selected = state.goal == goal,
                                     onClick = { onUpdateGoal(goal) },
-                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.tertiary)
+                                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.tertiary),
                                 )
                                 Text(goal)
                             }
@@ -142,7 +144,7 @@ fun OnboardingContent(
                             value = state.offset.toFloat(),
                             onValueChange = { onUpdateOffset(it.toInt()) },
                             valueRange = 0f..1000f,
-                            activeColor = MaterialTheme.colorScheme.tertiary
+                            activeColor = MaterialTheme.colorScheme.tertiary,
                         )
                     }
                 }
@@ -150,11 +152,12 @@ fun OnboardingContent(
 
             ExpressiveButton(
                 onClick = onComplete,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
                 containerColor = MaterialTheme.colorScheme.tertiary,
-                contentColor = MaterialTheme.colorScheme.onTertiary
+                contentColor = MaterialTheme.colorScheme.onTertiary,
             ) {
                 Text("Start tracking", style = MaterialTheme.typography.titleMedium)
             }
@@ -169,13 +172,14 @@ fun OnboardingContent(
 fun OnboardingPreview() {
     HealthTrackerTheme {
         OnboardingContent(
-            state = OnboardingState(
-                age = "25",
-                height = "180",
-                weight = "80",
-                goal = "Lose",
-                offset = 500
-            ),
+            state =
+                OnboardingState(
+                    age = "25",
+                    height = "180",
+                    weight = "80",
+                    goal = "Lose",
+                    offset = 500,
+                ),
             onUpdateGender = {},
             onUpdateAge = {},
             onUpdateHeight = {},
@@ -183,7 +187,7 @@ fun OnboardingPreview() {
             onUpdateActivity = {},
             onUpdateGoal = {},
             onUpdateOffset = {},
-            onComplete = {}
+            onComplete = {},
         )
     }
 }

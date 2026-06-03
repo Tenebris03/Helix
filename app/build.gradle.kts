@@ -5,14 +5,17 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.baselineprofile)
     alias(libs.plugins.secrets.gradle.plugin)
+    alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt)
 }
 
 android {
     namespace = "com.tenebris.health_tracker"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version =
+            release(36) {
+                minorApiLevel = 1
+            }
     }
 
     defaultConfig {
@@ -28,6 +31,7 @@ android {
     buildTypes {
         debug {
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("boolean", "SHOW_DEV_TOOLS", "true")
         }
         release {
             isMinifyEnabled = true
@@ -35,8 +39,9 @@ android {
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+            buildConfigField("boolean", "SHOW_DEV_TOOLS", "true")
         }
     }
     compileOptions {
@@ -48,10 +53,29 @@ android {
         buildConfig = true
     }
 
+    lint {
+        abortOnError = true
+        warningsAsErrors = true
+        checkReleaseBuilds = false
+        baseline = file("lint-baseline.xml")
+        disable += "NewerVersionAvailable"
+        disable += "GradleDependency"
+    }
+
     secrets {
         propertiesFileName = "secrets.properties"
         defaultPropertiesFileName = "secrets.defaults.properties"
     }
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(file("$rootDir/detekt.yml"))
+    baseline = file("detekt-baseline.xml")
+}
+
+ktlint {
+    verbose.set(true)
 }
 
 dependencies {
@@ -96,18 +120,18 @@ dependencies {
     implementation(libs.navigation.compose)
 
 // Lifecycle
-implementation(libs.lifecycle.viewmodel.compose)
-implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
 
 // WorkManager
-implementation(libs.workmanager.runtime)
+    implementation(libs.workmanager.runtime)
 
 // Security
-implementation(libs.security.crypto)
+    implementation(libs.security.crypto)
 
 // Koin DI
-implementation(libs.koin.android)
-implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.workmanager)
     implementation(libs.material3.adaptive.navigation.suite)
 
@@ -115,6 +139,7 @@ implementation(libs.koin.androidx.compose)
     baselineProfile(project(":baselineprofile"))
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

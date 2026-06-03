@@ -9,7 +9,7 @@ data class ProductResponse(
     val product: Product? = null,
     val status: Int,
     @SerialName("status_verbose")
-    val statusVerbose: String
+    val statusVerbose: String,
 )
 
 @Serializable
@@ -18,7 +18,7 @@ data class SearchResponse(
     val count: Int = 0,
     @SerialName("page_size")
     val pageSize: Int = 0,
-    val skip: Int = 0
+    val skip: Int = 0,
 )
 
 @Serializable
@@ -27,7 +27,7 @@ data class Product(
     val productName: String? = null,
     val nutriments: Nutriments? = null,
     val brands: String? = null,
-    val quantity: String? = null
+    val quantity: String? = null,
 )
 
 @Serializable
@@ -41,5 +41,5 @@ data class Nutriments(
     @SerialName("fat_100g")
     val fat100g: Double? = null,
     @SerialName("fiber_100g")
-    val fiber100g: Double? = null
+    val fiber100g: Double? = null,
 )

@@ -11,11 +11,9 @@ import java.time.LocalDate
 class FoodRepository(
     private val foodDao: FoodDao,
     private val cachedProductDao: CachedProductDao,
-    private val api: OpenFoodFactsApi
+    private val api: OpenFoodFactsApi,
 ) {
-    fun getEntriesByDate(date: LocalDate): Flow<List<FoodEntry>> {
-        return foodDao.getEntriesByDate(date.toString())
-    }
+    fun getEntriesByDate(date: LocalDate): Flow<List<FoodEntry>> = foodDao.getEntriesByDate(date.toString())
 
     suspend fun addFoodEntry(entry: FoodEntry) {
         foodDao.insertEntry(entry)
@@ -25,9 +23,7 @@ class FoodRepository(
         foodDao.deleteEntry(entry)
     }
 
-    fun getUniqueRecentEntries(): Flow<List<FoodEntry>> {
-        return foodDao.getUniqueRecentEntries()
-    }
+    fun getUniqueRecentEntries(): Flow<List<FoodEntry>> = foodDao.getUniqueRecentEntries()
 
     suspend fun getProductByBarcode(barcode: String): Result<CachedProduct> {
         // 1. Check local cache
@@ -49,17 +45,18 @@ class FoodRepository(
                 val carbs = product.nutriments?.carbohydrates100g?.toInt() ?: 0
                 val fiber = product.nutriments?.fiber100g?.toInt() ?: 0
                 val name = product.productName ?: "Unknown Product"
-                
-                val newCached = CachedProduct(
-                    barcode = barcode,
-                    name = name,
-                    calories100g = calories,
-                    protein100g = protein,
-                    fat100g = fat,
-                    carbohydrates100g = carbs,
-                    fiber100g = fiber
-                )
-                
+
+                val newCached =
+                    CachedProduct(
+                        barcode = barcode,
+                        name = name,
+                        calories100g = calories,
+                        protein100g = protein,
+                        fat100g = fat,
+                        carbohydrates100g = carbs,
+                        fiber100g = fiber,
+                    )
+
                 cachedProductDao.insertProduct(newCached)
                 cachedProductDao.trimCache()
                 Result.success(newCached)

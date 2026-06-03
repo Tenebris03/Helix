@@ -13,5 +13,5 @@ data class CachedProduct(
     val fat100g: Int = 0,
     val carbohydrates100g: Int = 0,
     val fiber100g: Int = 0,
-    val lastAccessed: Long = System.currentTimeMillis()
+    val lastAccessed: Long = System.currentTimeMillis(),
 )

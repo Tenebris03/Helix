@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,23 +35,25 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var height by remember(state.height) { mutableStateOf(state.height.toString()) }
     var apiKeyInput by remember(apiKey) { mutableStateOf(apiKey) }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/octet-stream")
-    ) { uri: Uri? ->
-        uri?.let {
-            val outputStream = context.contentResolver.openOutputStream(it)
-            viewModel.exportData(context, outputStream)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/octet-stream"),
+        ) { uri: Uri? ->
+            uri?.let {
+                val outputStream = context.contentResolver.openOutputStream(it)
+                viewModel.exportData(context, outputStream)
+            }
         }
-    }
 
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            val inputStream = context.contentResolver.openInputStream(it)
-            viewModel.importData(context, inputStream)
+    val importLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent(),
+        ) { uri: Uri? ->
+            uri?.let {
+                val inputStream = context.contentResolver.openInputStream(it)
+                viewModel.importData(context, inputStream)
+            }
         }
-    }
 
     var hasLocationPerm by remember { mutableStateOf(false) }
     var hasCalendarPerm by remember { mutableStateOf(false) }
@@ -64,49 +65,52 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
     checkPermissions()
 
-    val locationPermLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { checkPermissions() }
+    val locationPermLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { checkPermissions() }
 
-    val calendarPermLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { checkPermissions() }
+    val calendarPermLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { checkPermissions() }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState()),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
         ExpressiveHeader(
             text = "Settings",
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
                 val currentAge = age.toIntOrNull() ?: state.age
                 val currentHeight = height.toIntOrNull() ?: state.height
-                
-                val reactiveBmr = if (state.gender == "Male") {
-                    10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge + 5
-                } else {
-                    10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge - 161
-                }
+
+                val reactiveBmr =
+                    if (state.gender == "Male") {
+                        10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge + 5
+                    } else {
+                        10 * state.latestWeight + 6.25 * currentHeight - 5 * currentAge - 161
+                    }
 
                 Text(
                     "Dynamic BMR: ${reactiveBmr.toInt()} kcal",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     "Based on latest weight: ${state.latestWeight} kg",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -117,7 +121,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onValueChange = { activity = it },
                     valueRange = 1.0f..2.0f,
                     steps = 9,
-                    activeColor = MaterialTheme.colorScheme.tertiary
+                    activeColor = MaterialTheme.colorScheme.tertiary,
                 )
 
                 Text("Goal", style = MaterialTheme.typography.labelLarge)
@@ -127,31 +131,33 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             selected = goal == g,
                             onClick = { goal = g },
                             label = { Text(g) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.tertiary,
-                                selectedLabelColor = MaterialTheme.colorScheme.onTertiary
-                            )
+                            colors =
+                                FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onTertiary,
+                                ),
                         )
                     }
                 }
 
-                val totalTarget = when(goal) {
-                    "Lose" -> (reactiveBmr * activity) - offset
-                    "Gain" -> (reactiveBmr * activity) + offset
-                    else -> reactiveBmr * activity
-                }
+                val totalTarget =
+                    when (goal) {
+                        "Lose" -> (reactiveBmr * activity) - offset
+                        "Gain" -> (reactiveBmr * activity) + offset
+                        else -> reactiveBmr * activity
+                    }
 
                 Text(
                     "Total daily target: ${totalTarget.toInt()} kcal",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.tertiary
+                    color = MaterialTheme.colorScheme.tertiary,
                 )
 
                 Text(
                     "Protein target: ${state.proteinTarget}g",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Text("Calorie offset: ${offset.toInt()} kcal", style = MaterialTheme.typography.bodyMedium)
@@ -159,7 +165,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     value = offset,
                     onValueChange = { offset = it },
                     valueRange = 0f..1000f,
-                    activeColor = MaterialTheme.colorScheme.tertiary
+                    activeColor = MaterialTheme.colorScheme.tertiary,
                 )
 
                 ExpressiveTextField(
@@ -167,7 +173,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onValueChange = { age = it },
                     label = "Age",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 ExpressiveTextField(
@@ -175,7 +181,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     onValueChange = { height = it },
                     label = "Height (cm)",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 ExpressiveButton(
@@ -186,12 +192,12 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             activityLevel = activity,
                             gender = state.gender,
                             age = age.toIntOrNull() ?: state.age,
-                            height = height.toIntOrNull() ?: state.height
+                            height = height.toIntOrNull() ?: state.height,
                         )
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     containerColor = MaterialTheme.colorScheme.tertiary,
-                    contentColor = MaterialTheme.colorScheme.onTertiary
+                    contentColor = MaterialTheme.colorScheme.onTertiary,
                 ) {
                     Text("Save changes")
                 }
@@ -203,7 +209,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             "Backup & Restore",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -212,14 +218,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text(
                     "You can backup your data directly to Google Drive by selecting it as the destination in the file picker.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 ExpressiveButton(
                     onClick = { exportLauncher.launch("health_tracker_backup.db") },
                     modifier = Modifier.fillMaxWidth(),
                     containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                 ) {
                     Text("Export data")
                 }
@@ -227,7 +233,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 OutlinedButton(
                     onClick = { importLauncher.launch("*/*") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = CircleShape
+                    shape = CircleShape,
                 ) {
                     Text("Import data", color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -239,7 +245,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             "Invisible Coach",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -248,14 +254,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text(
                     "Enter your Gemini API key to enable the Invisible Coach. It runs entirely on-device and never leaves your phone.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 ExpressiveTextField(
                     value = apiKeyInput,
                     onValueChange = { apiKeyInput = it },
                     label = "Gemini API Key",
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -263,7 +269,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         onClick = { viewModel.updateApiKey(apiKeyInput) },
                         modifier = Modifier.weight(1f).height(48.dp),
                         containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = MaterialTheme.colorScheme.onTertiary
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
                     ) {
                         Text("Save Key")
                     }
@@ -275,7 +281,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 viewModel.clearApiKey()
                             },
                             modifier = Modifier.height(48.dp),
-                            shape = CircleShape
+                            shape = CircleShape,
                         ) {
                             Text("Remove", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -286,7 +292,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     Text(
                         text = "✓ Key configured",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
@@ -297,7 +303,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             "Permissions",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -306,21 +312,21 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Text(
                     "Optional permissions that give the Invisible Coach more context for better insights.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 // Location permission
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Location", style = MaterialTheme.typography.labelLarge)
                         Text(
                             "Local weather for context-aware coaching",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     if (hasLocationPerm) {
@@ -329,7 +335,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         ExpressiveButton(
                             onClick = { locationPermLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
                             containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary
+                            contentColor = MaterialTheme.colorScheme.onTertiary,
                         ) {
                             Text("Grant")
                         }
@@ -342,14 +348,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Calendar", style = MaterialTheme.typography.labelLarge)
                         Text(
                             "Detect stress patterns from meeting density",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     if (hasCalendarPerm) {
@@ -358,10 +364,38 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         ExpressiveButton(
                             onClick = { calendarPermLauncher.launch(Manifest.permission.READ_CALENDAR) },
                             containerColor = MaterialTheme.colorScheme.tertiary,
-                            contentColor = MaterialTheme.colorScheme.onTertiary
+                            contentColor = MaterialTheme.colorScheme.onTertiary,
                         ) {
                             Text("Grant")
                         }
+                    }
+                }
+            }
+        }
+
+        if (com.tenebris.health_tracker.BuildConfig.SHOW_DEV_TOOLS) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Developer",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Generate 60 days of mock food entries, weight entries, and profile data for testing. Resets the coach cooldown.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    ExpressiveButton(
+                        onClick = { viewModel.seedTestData() },
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                    ) {
+                        Text("Seed test data")
                     }
                 }
             }

@@ -12,22 +12,25 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 data class ProgressState(
-    val weightEntries: List<WeightEntry> = emptyList()
+    val weightEntries: List<WeightEntry> = emptyList(),
 )
 
-class ProgressViewModel(private val weightDao: WeightDao) : ViewModel() {
-
-    val state: StateFlow<ProgressState> = weightDao.getAllWeightEntries()
-        .map { ProgressState(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProgressState())
+class ProgressViewModel(
+    private val weightDao: WeightDao,
+) : ViewModel() {
+    val state: StateFlow<ProgressState> =
+        weightDao
+            .getAllWeightEntries()
+            .map { ProgressState(it) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProgressState())
 
     fun addWeight(weight: Float) {
         viewModelScope.launch {
             weightDao.insertWeight(
                 WeightEntry(
                     weight = weight,
-                    date = LocalDate.now().toString()
-                )
+                    date = LocalDate.now().toString(),
+                ),
             )
         }
     }

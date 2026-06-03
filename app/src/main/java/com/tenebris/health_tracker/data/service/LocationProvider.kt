@@ -8,21 +8,23 @@ import androidx.core.content.ContextCompat
 
 data class DeviceLocation(
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
 )
 
-class LocationProvider(private val context: Context) {
-
+class LocationProvider(
+    private val context: Context,
+) {
     fun getLastKnownLocation(): DeviceLocation? {
         if (!hasPermission()) return null
 
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
 
-        val providers = listOf(
-            LocationManager.NETWORK_PROVIDER,
-            LocationManager.GPS_PROVIDER,
-            LocationManager.PASSIVE_PROVIDER
-        )
+        val providers =
+            listOf(
+                LocationManager.NETWORK_PROVIDER,
+                LocationManager.GPS_PROVIDER,
+                LocationManager.PASSIVE_PROVIDER,
+            )
 
         for (provider in providers) {
             try {
@@ -37,9 +39,9 @@ class LocationProvider(private val context: Context) {
         return null
     }
 
-    private fun hasPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_COARSE_LOCATION
+    private fun hasPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
         ) == PackageManager.PERMISSION_GRANTED
-    }
 }

@@ -8,23 +8,26 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 class FoodGatekeeper {
-
-    private val labeler by lazy { 
-        ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS) 
+    private val labeler by lazy {
+        ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
     }
 
-    suspend fun isFood(bitmap: Bitmap, confidenceThreshold: Float = 0.4f): Boolean {
+    suspend fun isFood(
+        bitmap: Bitmap,
+        confidenceThreshold: Float = 0.4f,
+    ): Boolean {
         val image = InputImage.fromBitmap(bitmap, 0)
         return suspendCancellableCoroutine { continuation ->
-            labeler.process(image)
+            labeler
+                .process(image)
                 .addOnSuccessListener { labels ->
-                    val isFood = labels.any {
-                        it.text.contains("Food", ignoreCase = true) &&
-                        it.confidence >= confidenceThreshold
-                    }
+                    val isFood =
+                        labels.any {
+                            it.text.contains("Food", ignoreCase = true) &&
+                                it.confidence >= confidenceThreshold
+                        }
                     continuation.resume(isFood)
-                }
-                .addOnFailureListener {
+                }.addOnFailureListener {
                     continuation.resume(true)
                 }
         }

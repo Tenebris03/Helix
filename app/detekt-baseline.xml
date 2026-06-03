@@ -1,0 +1,156 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:CoachRepository.kt$CoachRepository$suspend fun getCoachResponse( currentLog: String, remainingCalories: Int, apiKey: String, location: DeviceLocation? = null, ): CoachResult</ID>
+    <ID>CyclomaticComplexMethod:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddFoodSheetContent( scannerState: ScannerState, onAdd: (String, Int, Int, Int, Int, Int) -&gt; Unit, onBarcodeScanned: (String) -&gt; Unit, onFoodImageCaptured: (Bitmap) -&gt; Unit, onResetScanner: () -&gt; Unit, )</ID>
+    <ID>CyclomaticComplexMethod:ProgressScreen.kt$@Composable fun WeightGraph( entries: List&lt;WeightEntry&gt;, modifier: Modifier = Modifier, )</ID>
+    <ID>CyclomaticComplexMethod:SettingsScreen.kt$@Composable fun SettingsScreen(viewModel: SettingsViewModel)</ID>
+    <ID>CyclomaticComplexMethod:TrendAnalyzer.kt$TrendAnalyzer$suspend fun buildTrendSummary(): String</ID>
+    <ID>FunctionNaming:BarcodeScannerView.kt$@OptIn(ExperimentalGetImage::class) @Composable fun BarcodeScannerView( onBarcodeScanned: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:CoachCard.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CoachCard( headline: String, body: String, visible: Boolean, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable fun FoodCard( entry: FoodEntry, onDelete: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@Composable fun PreviouslyAddedSheetContent( recentEntries: List&lt;FoodEntry&gt;, onAdd: (FoodEntry) -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddFoodSheetContent( scannerState: ScannerState, onAdd: (String, Int, Int, Int, Int, Int) -&gt; Unit, onBarcodeScanned: (String) -&gt; Unit, onFoodImageCaptured: (Bitmap) -&gt; Unit, onResetScanner: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun DashboardScreen( viewModel: DashboardViewModel, coachViewModel: CoachViewModel, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun SwipeToDeleteFoodCard( entry: FoodEntry, onDelete: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) @Composable fun DashboardContent( state: DashboardState, scannerState: ScannerState, coachState: CoachUiState = CoachUiState(), onDateSelected: (java.time.LocalDate) -&gt; Unit, onDeleteFood: (FoodEntry) -&gt; Unit, onAddFood: (String, Int, Int, Int, Int, Int) -&gt; Unit, onBarcodeScanned: (String) -&gt; Unit, onFoodImageCaptured: (Bitmap) -&gt; Unit, onResetScanner: () -&gt; Unit, onDismissCoach: () -&gt; Unit = {}, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@Composable fun DatePickerTimeline( selectedDate: LocalDate, onDateSelected: (LocalDate) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@Composable fun ExpressiveButton( onClick: () -&gt; Unit, modifier: Modifier = Modifier, containerColor: Color = MaterialTheme.colorScheme.primary, contentColor: Color = MaterialTheme.colorScheme.onPrimary, enabled: Boolean = true, content: @Composable RowScope.() -&gt; Unit, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@Composable fun ExpressiveCard( modifier: Modifier = Modifier, containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh, elevation: androidx.compose.ui.unit.Dp = 2.dp, content: @Composable ColumnScope.() -&gt; Unit, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@Composable fun ExpressiveHeader( text: String, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@Composable fun ExpressiveTextField( value: String, onValueChange: (String) -&gt; Unit, label: String, modifier: Modifier = Modifier, keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ExpressiveSlider( value: Float, onValueChange: (Float) -&gt; Unit, valueRange: ClosedFloatingPointRange&lt;Float&gt; = 0f..1f, steps: Int = 0, modifier: Modifier = Modifier, activeColor: Color = MaterialTheme.colorScheme.primary, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TachometerGauge( caloriesProgress: Float, proteinProgress: Float, currentCalories: Int, targetCalories: Int, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:GoogleExpressiveComponents.kt$@OptIn(ExperimentalMaterial3ExpressiveApi::class) @Composable fun WavyLoader(modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:MainActivity.kt$@Composable fun HealthTrackerApp()</ID>
+    <ID>FunctionNaming:MainActivity.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MainTabScreen()</ID>
+    <ID>FunctionNaming:OnboardingScreen.kt$@Composable fun OnboardingContent( state: OnboardingState, onUpdateGender: (String) -&gt; Unit, onUpdateAge: (String) -&gt; Unit, onUpdateHeight: (String) -&gt; Unit, onUpdateWeight: (String) -&gt; Unit, onUpdateActivity: (Float) -&gt; Unit, onUpdateGoal: (String) -&gt; Unit, onUpdateOffset: (Int) -&gt; Unit, onComplete: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:OnboardingScreen.kt$@Composable fun OnboardingScreen(viewModel: OnboardingViewModel)</ID>
+    <ID>FunctionNaming:OnboardingScreen.kt$@androidx.compose.ui.tooling.preview.Preview @Composable fun OnboardingPreview()</ID>
+    <ID>FunctionNaming:ProgressScreen.kt$@Composable fun WeightGraph( entries: List&lt;WeightEntry&gt;, modifier: Modifier = Modifier, )</ID>
+    <ID>FunctionNaming:ProgressScreen.kt$@Composable fun WeightHistoryCard( entry: WeightEntry, onDelete: () -&gt; Unit, )</ID>
+    <ID>FunctionNaming:ProgressScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddWeightBottomSheet( onDismiss: () -&gt; Unit, onAdd: (Float) -&gt; Unit, sheetState: SheetState, )</ID>
+    <ID>FunctionNaming:ProgressScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ProgressScreen(viewModel: ProgressViewModel)</ID>
+    <ID>FunctionNaming:SettingsScreen.kt$@Composable fun SettingsScreen(viewModel: SettingsViewModel)</ID>
+    <ID>FunctionNaming:Theme.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) @Composable fun HealthTrackerTheme( darkTheme: Boolean = isSystemInDarkTheme(), dynamicColor: Boolean = true, content: @Composable () -&gt; Unit, )</ID>
+    <ID>LongMethod:BarcodeScannerView.kt$@OptIn(ExperimentalGetImage::class) @Composable fun BarcodeScannerView( onBarcodeScanned: (String) -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:CoachCard.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun CoachCard( headline: String, body: String, visible: Boolean, onDismiss: () -&gt; Unit, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@Composable fun PreviouslyAddedSheetContent( recentEntries: List&lt;FoodEntry&gt;, onAdd: (FoodEntry) -&gt; Unit, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun AddFoodSheetContent( scannerState: ScannerState, onAdd: (String, Int, Int, Int, Int, Int) -&gt; Unit, onBarcodeScanned: (String) -&gt; Unit, onFoodImageCaptured: (Bitmap) -&gt; Unit, onResetScanner: () -&gt; Unit, )</ID>
+    <ID>LongMethod:DashboardScreen.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class) @Composable fun DashboardContent( state: DashboardState, scannerState: ScannerState, coachState: CoachUiState = CoachUiState(), onDateSelected: (java.time.LocalDate) -&gt; Unit, onDeleteFood: (FoodEntry) -&gt; Unit, onAddFood: (String, Int, Int, Int, Int, Int) -&gt; Unit, onBarcodeScanned: (String) -&gt; Unit, onFoodImageCaptured: (Bitmap) -&gt; Unit, onResetScanner: () -&gt; Unit, onDismissCoach: () -&gt; Unit = {}, )</ID>
+    <ID>LongMethod:FoodVisionService.kt$FoodVisionService$suspend fun analyzeFoodImage(bitmap: Bitmap): FoodRecognitionResult?</ID>
+    <ID>LongMethod:GoogleExpressiveComponents.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun TachometerGauge( caloriesProgress: Float, proteinProgress: Float, currentCalories: Int, targetCalories: Int, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:MainActivity.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MainTabScreen()</ID>
+    <ID>LongMethod:OnboardingScreen.kt$@Composable fun OnboardingContent( state: OnboardingState, onUpdateGender: (String) -&gt; Unit, onUpdateAge: (String) -&gt; Unit, onUpdateHeight: (String) -&gt; Unit, onUpdateWeight: (String) -&gt; Unit, onUpdateActivity: (Float) -&gt; Unit, onUpdateGoal: (String) -&gt; Unit, onUpdateOffset: (Int) -&gt; Unit, onComplete: () -&gt; Unit, )</ID>
+    <ID>LongMethod:ProgressScreen.kt$@Composable fun WeightGraph( entries: List&lt;WeightEntry&gt;, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:ProgressScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun ProgressScreen(viewModel: ProgressViewModel)</ID>
+    <ID>LongMethod:SettingsScreen.kt$@Composable fun SettingsScreen(viewModel: SettingsViewModel)</ID>
+    <ID>LoopWithTooManyJumpStatements:LocationProvider.kt$LocationProvider$for</ID>
+    <ID>NestedBlockDepth:CalendarContextResolver.kt$CalendarContextResolver$fun getRecentCalendarEvents(windowHours: Long = 3): String</ID>
+    <ID>PackageNaming:AppDatabase.kt$package com.tenebris.health_tracker.data.local</ID>
+    <ID>PackageNaming:AppModule.kt$package com.tenebris.health_tracker.di</ID>
+    <ID>PackageNaming:BarcodeScannerView.kt$package com.tenebris.health_tracker.ui.scanner</ID>
+    <ID>PackageNaming:CachedProduct.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:CachedProductDao.kt$package com.tenebris.health_tracker.data.local</ID>
+    <ID>PackageNaming:CalendarContextResolver.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:CoachCard.kt$package com.tenebris.health_tracker.ui.components</ID>
+    <ID>PackageNaming:CoachNotificationDispatcher.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:CoachPromptBuilder.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:CoachRepository.kt$package com.tenebris.health_tracker.data.repository</ID>
+    <ID>PackageNaming:CoachResponse.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:CoachResult.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:CoachViewModel.kt$package com.tenebris.health_tracker.ui.coach</ID>
+    <ID>PackageNaming:Color.kt$package com.tenebris.health_tracker.ui.theme</ID>
+    <ID>PackageNaming:Constants.kt$package com.tenebris.health_tracker.data</ID>
+    <ID>PackageNaming:DailyCalorieSum.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:DashboardScreen.kt$package com.tenebris.health_tracker.ui.dashboard</ID>
+    <ID>PackageNaming:DashboardViewModel.kt$package com.tenebris.health_tracker.ui.dashboard</ID>
+    <ID>PackageNaming:DistilBertFoodClassifier.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:EncryptedStorageManager.kt$package com.tenebris.health_tracker.data.pref</ID>
+    <ID>PackageNaming:ExampleUnitTest.kt$package com.tenebris.health_tracker</ID>
+    <ID>PackageNaming:FoodDao.kt$package com.tenebris.health_tracker.data.local</ID>
+    <ID>PackageNaming:FoodEntry.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:FoodGatekeeper.kt$package com.tenebris.health_tracker.data.remote</ID>
+    <ID>PackageNaming:FoodProblemDetector.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:FoodRecognitionResult.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:FoodRepository.kt$package com.tenebris.health_tracker.data.repository</ID>
+    <ID>PackageNaming:FoodVisionService.kt$package com.tenebris.health_tracker.data.remote</ID>
+    <ID>PackageNaming:GoogleExpressiveComponents.kt$package com.tenebris.health_tracker.ui.components</ID>
+    <ID>PackageNaming:HealthTrackerApplication.kt$package com.tenebris.health_tracker</ID>
+    <ID>PackageNaming:HeuristicFoodProblemDetector.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:HeuristicFoodProblemDetectorTest.kt$package com.tenebris.health_tracker</ID>
+    <ID>PackageNaming:InvisibleCoachWorker.kt$package com.tenebris.health_tracker.data.worker</ID>
+    <ID>PackageNaming:LocationProvider.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:MainActivity.kt$package com.tenebris.health_tracker</ID>
+    <ID>PackageNaming:Motion.kt$package com.tenebris.health_tracker.ui.theme</ID>
+    <ID>PackageNaming:OnboardingScreen.kt$package com.tenebris.health_tracker.ui.onboarding</ID>
+    <ID>PackageNaming:OnboardingViewModel.kt$package com.tenebris.health_tracker.ui.onboarding</ID>
+    <ID>PackageNaming:OpenFoodFactsApi.kt$package com.tenebris.health_tracker.data.remote</ID>
+    <ID>PackageNaming:OpenFoodFactsDto.kt$package com.tenebris.health_tracker.data.remote</ID>
+    <ID>PackageNaming:ProfileDao.kt$package com.tenebris.health_tracker.data.local</ID>
+    <ID>PackageNaming:ProfileEntry.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>PackageNaming:ProgressScreen.kt$package com.tenebris.health_tracker.ui.progress</ID>
+    <ID>PackageNaming:ProgressViewModel.kt$package com.tenebris.health_tracker.ui.progress</ID>
+    <ID>PackageNaming:SettingsScreen.kt$package com.tenebris.health_tracker.ui.settings</ID>
+    <ID>PackageNaming:SettingsViewModel.kt$package com.tenebris.health_tracker.ui.settings</ID>
+    <ID>PackageNaming:Shape.kt$package com.tenebris.health_tracker.ui.theme</ID>
+    <ID>PackageNaming:TestDataSeeder.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:Theme.kt$package com.tenebris.health_tracker.ui.theme</ID>
+    <ID>PackageNaming:TrendAnalyzer.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:Type.kt$package com.tenebris.health_tracker.ui.theme</ID>
+    <ID>PackageNaming:UserPreferences.kt$package com.tenebris.health_tracker.data.pref</ID>
+    <ID>PackageNaming:VisionRepository.kt$package com.tenebris.health_tracker.data.repository</ID>
+    <ID>PackageNaming:WeatherService.kt$package com.tenebris.health_tracker.data.service</ID>
+    <ID>PackageNaming:WeightDao.kt$package com.tenebris.health_tracker.data.local</ID>
+    <ID>PackageNaming:WeightEntry.kt$package com.tenebris.health_tracker.data.model</ID>
+    <ID>ReturnCount:CalendarContextResolver.kt$CalendarContextResolver$fun getRecentCalendarEvents(windowHours: Long = 3): String</ID>
+    <ID>ReturnCount:CoachRepository.kt$CoachRepository$suspend fun getCoachResponse( currentLog: String, remainingCalories: Int, apiKey: String, location: DeviceLocation? = null, ): CoachResult</ID>
+    <ID>ReturnCount:FoodVisionService.kt$FoodVisionService$suspend fun analyzeFoodImage(bitmap: Bitmap): FoodRecognitionResult?</ID>
+    <ID>ReturnCount:LocationProvider.kt$LocationProvider$fun getLastKnownLocation(): DeviceLocation?</ID>
+    <ID>ReturnCount:VisionRepository.kt$VisionRepository$suspend fun recognizeFood(bitmap: Bitmap): Result&lt;FoodRecognitionResult&gt;</ID>
+    <ID>ReturnCount:WeatherService.kt$WeatherService$suspend fun getCurrentWeatherDescription( latitude: Double? = null, longitude: Double? = null, ): String</ID>
+    <ID>SwallowedException:BarcodeScannerView.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:BarcodeScannerView.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FoodRepository.kt$FoodRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:FoodVisionService.kt$FoodVisionService$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:VisionRepository.kt$VisionRepository$e: Exception</ID>
+    <ID>UnusedPrivateProperty:CalendarContextResolver.kt$CalendarContextResolver$val selection = "${CalendarContract.Instances.BEGIN} &gt;= ? AND ${CalendarContract.Instances.END} &lt;= ?"</ID>
+    <ID>UnusedPrivateProperty:CalendarContextResolver.kt$CalendarContextResolver$val selectionArgs = arrayOf(windowStart.toString(), windowEnd.toString())</ID>
+    <ID>UnusedPrivateProperty:CalendarContextResolver.kt$CalendarContextResolver$val uri = CalendarContract.Instances.CONTENT_URI</ID>
+    <ID>WildcardImport:BarcodeScannerView.kt$import androidx.camera.core.*</ID>
+    <ID>WildcardImport:BarcodeScannerView.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:BarcodeScannerView.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:BarcodeScannerView.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:BarcodeScannerView.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CoachCard.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:CoachCard.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:CoachCard.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:CoachViewModel.kt$import kotlinx.coroutines.flow.*</ID>
+    <ID>WildcardImport:DashboardScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:DashboardScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:DashboardScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:DashboardScreen.kt$import com.tenebris.health_tracker.ui.components.*</ID>
+    <ID>WildcardImport:DashboardViewModel.kt$import kotlinx.coroutines.flow.*</ID>
+    <ID>WildcardImport:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:GoogleExpressiveComponents.kt$import androidx.compose.animation.core.*</ID>
+    <ID>WildcardImport:GoogleExpressiveComponents.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:GoogleExpressiveComponents.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:GoogleExpressiveComponents.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:MainActivity.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:OnboardingScreen.kt$import com.tenebris.health_tracker.ui.components.*</ID>
+    <ID>WildcardImport:ProgressScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:ProgressScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:ProgressScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:SettingsScreen.kt$import com.tenebris.health_tracker.ui.components.*</ID>
+    <ID>WildcardImport:SettingsViewModel.kt$import kotlinx.coroutines.flow.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

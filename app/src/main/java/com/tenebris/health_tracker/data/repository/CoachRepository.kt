@@ -3,8 +3,8 @@ package com.tenebris.health_tracker.data.repository
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.ServerException
 import com.google.ai.client.generativeai.type.content
-import com.tenebris.health_tracker.data.model.CoachResult
 import com.tenebris.health_tracker.data.Constants
+import com.tenebris.health_tracker.data.model.CoachResult
 import com.tenebris.health_tracker.data.service.CalendarContextResolver
 import com.tenebris.health_tracker.data.service.CoachPromptBuilder
 import com.tenebris.health_tracker.data.service.DeviceLocation
@@ -16,34 +16,39 @@ import kotlinx.serialization.json.Json
 class CoachRepository(
     private val trendAnalyzer: TrendAnalyzer,
     private val calendarResolver: CalendarContextResolver,
-    private val weatherService: WeatherService
+    private val weatherService: WeatherService,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun getCoachResponse(
         currentLog: String,
+        remainingCalories: Int,
         apiKey: String,
-        location: DeviceLocation? = null
+        location: DeviceLocation? = null,
     ): CoachResult {
-        val generativeModel = GenerativeModel(
-            modelName = Constants.GEMINI_MODEL,
-            apiKey = apiKey,
-        )
+        val generativeModel =
+            GenerativeModel(
+                modelName = Constants.GEMINI_MODEL,
+                apiKey = apiKey,
+            )
 
         val calendarCtx = calendarResolver.getRecentCalendarEvents()
-        val weatherCtx = if (location != null) {
-            weatherService.getCurrentWeatherDescription(location.latitude, location.longitude)
-        } else {
-            weatherService.getCurrentWeatherDescription()
-        }
+        val weatherCtx =
+            if (location != null) {
+                weatherService.getCurrentWeatherDescription(location.latitude, location.longitude)
+            } else {
+                weatherService.getCurrentWeatherDescription()
+            }
         val trends = trendAnalyzer.buildTrendSummary()
 
-        val prompt = CoachPromptBuilder.build(
-            currentLog = currentLog,
-            calendarContext = calendarCtx,
-            weatherContext = weatherCtx,
-            historicalTrends = trends
-        )
+        val prompt =
+            CoachPromptBuilder.build(
+                currentLog = currentLog,
+                remainingCalories = remainingCalories,
+                calendarContext = calendarCtx,
+                weatherContext = weatherCtx,
+                historicalTrends = trends,
+            )
 
         val geminiPrompt = content { text(prompt) }
 
@@ -52,10 +57,11 @@ class CoachRepository(
                 val response = generativeModel.generateContent(geminiPrompt)
                 val responseText = response.text ?: continue
 
-                val cleaned = responseText
-                    .replace(Regex("```json\\s?"), "")
-                    .replace("```", "")
-                    .trim()
+                val cleaned =
+                    responseText
+                        .replace(Regex("```json\\s?"), "")
+                        .replace("```", "")
+                        .trim()
 
                 val coachResponse = json.decodeFromString<com.tenebris.health_tracker.data.model.CoachResponse>(cleaned)
                 return CoachResult.Success(coachResponse)

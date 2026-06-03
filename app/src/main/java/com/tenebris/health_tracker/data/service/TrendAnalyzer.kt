@@ -6,9 +6,8 @@ import java.time.LocalDate
 
 class TrendAnalyzer(
     private val foodDao: FoodDao,
-    private val weightDao: WeightDao
+    private val weightDao: WeightDao,
 ) {
-
     suspend fun buildTrendSummary(): String {
         val today = LocalDate.now()
         val sevenDaysAgo = today.minusDays(7).toString()
@@ -30,17 +29,23 @@ class TrendAnalyzer(
         val avgWeight7 = weightDao.getAverageWeightSince(sevenDaysAgo)
         val avgWeight30 = weightDao.getAverageWeightSince(thirtyDaysAgo)
 
-        val stdDev = if (dailyCal7.size >= 2) {
-            val mean = dailyCal7.average()
-            kotlin.math.sqrt(dailyCal7.sumOf { (it - mean) * (it - mean) } / (dailyCal7.size - 1))
-        } else 0.0
+        val stdDev =
+            if (dailyCal7.size >= 2) {
+                val mean = dailyCal7.average()
+                kotlin.math.sqrt(dailyCal7.sumOf { (it - mean) * (it - mean) } / (dailyCal7.size - 1))
+            } else {
+                0.0
+            }
 
-        val anomaly = dailyCal7.maxOrNull()?.let { max ->
-            if (stdDev > 0 && max > avgCal7 + 2 * stdDev) {
-                val days = dailyCal7.filter { it > avgCal7 + 1.5 * stdDev }.size
-                "Anomaly: $days day(s) with calorie spikes >1.5σ above 7-day mean"
-            } else null
-        } ?: "No significant anomalies"
+        val anomaly =
+            dailyCal7.maxOrNull()?.let { max ->
+                if (stdDev > 0 && max > avgCal7 + 2 * stdDev) {
+                    val days = dailyCal7.filter { it > avgCal7 + 1.5 * stdDev }.size
+                    "Anomaly: $days day(s) with calorie spikes >1.5σ above 7-day mean"
+                } else {
+                    null
+                }
+            } ?: "No significant anomalies"
 
         return buildString {
             appendLine("7-day avg calories: $avgCal7/day")

@@ -12,25 +12,25 @@ data class CoachUiState(
     val headline: String? = null,
     val body: String? = null,
     val visible: Boolean = false,
-    val apiKeyInvalid: Boolean = false
+    val apiKeyInvalid: Boolean = false,
 )
 
 class CoachViewModel(
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
 ) : ViewModel() {
-
-    val state: StateFlow<CoachUiState> = combine(
-        userPreferences.coachHeadline,
-        userPreferences.coachBody,
-        userPreferences.coachApiKeyValid
-    ) { headline, body, apiKeyValid ->
-        CoachUiState(
-            headline = headline,
-            body = body,
-            visible = headline != null && body != null,
-            apiKeyInvalid = !apiKeyValid
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CoachUiState())
+    val state: StateFlow<CoachUiState> =
+        combine(
+            userPreferences.coachHeadline,
+            userPreferences.coachBody,
+            userPreferences.coachApiKeyValid,
+        ) { headline, body, apiKeyValid ->
+            CoachUiState(
+                headline = headline,
+                body = body,
+                visible = headline != null && body != null,
+                apiKeyInvalid = !apiKeyValid,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CoachUiState())
 
     fun dismiss() {
         viewModelScope.launch {

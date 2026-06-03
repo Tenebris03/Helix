@@ -14,7 +14,7 @@ interface ProfileDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProfile(entry: ProfileEntry)
-    
+
     @Query("SELECT * FROM profile_entries ORDER BY date DESC, id DESC LIMIT 1")
     fun getLatestProfile(): Flow<ProfileEntry?>
 }

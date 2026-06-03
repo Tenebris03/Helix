@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class CoachResponse(
     val criticalAlert: Boolean,
     val reasonHeadline: String,
-    val reasonBody: String
+    val reasonBody: String,
 )

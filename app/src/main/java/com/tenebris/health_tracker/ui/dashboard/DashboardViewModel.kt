@@ -1,23 +1,22 @@
 package com.tenebris.health_tracker.ui.dashboard
 
+import android.graphics.Bitmap
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tenebris.health_tracker.data.local.ProfileDao
-import com.tenebris.health_tracker.data.model.FoodEntry
-import com.tenebris.health_tracker.data.model.ProfileEntry
-import com.tenebris.health_tracker.data.model.WeightEntry
-import com.tenebris.health_tracker.data.service.FoodProblemDetector
-import com.tenebris.health_tracker.data.pref.UserPreferences
-import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
-import com.tenebris.health_tracker.data.repository.FoodRepository
-import com.tenebris.health_tracker.data.repository.VisionRepository
-import android.graphics.Bitmap
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.tenebris.health_tracker.data.local.ProfileDao
+import com.tenebris.health_tracker.data.model.FoodEntry
+import com.tenebris.health_tracker.data.model.ProfileEntry
+import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
+import com.tenebris.health_tracker.data.repository.FoodRepository
+import com.tenebris.health_tracker.data.repository.VisionRepository
+import com.tenebris.health_tracker.data.service.FoodProblemDetector
 import com.tenebris.health_tracker.data.worker.InvisibleCoachWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,13 +36,15 @@ data class DashboardState(
     val targetCalories: Int = 2000,
     val targetProtein: Int = 150,
     val currentWeight: Float = 70f,
-    val recentEntries: List<FoodEntry> = emptyList()
+    val recentEntries: List<FoodEntry> = emptyList(),
 )
 
 @Stable
 sealed class ScannerState {
     object Idle : ScannerState()
+
     object Loading : ScannerState()
+
     data class Success(
         val name: String,
         val calories100g: Int,
@@ -51,9 +52,12 @@ sealed class ScannerState {
         val fat100g: Int = 0,
         val carbohydrates100g: Int = 0,
         val fiber100g: Int = 0,
-        val estimatedWeightGrams: Int = 100
+        val estimatedWeightGrams: Int = 100,
     ) : ScannerState()
-    data class Error(val message: String) : ScannerState()
+
+    data class Error(
+        val message: String,
+    ) : ScannerState()
 }
 
 class DashboardViewModel(
@@ -63,9 +67,8 @@ class DashboardViewModel(
     private val profileDao: ProfileDao,
     private val userPreferences: UserPreferences,
     private val application: android.app.Application,
-    private val foodProblemDetector: FoodProblemDetector
+    private val foodProblemDetector: FoodProblemDetector,
 ) : ViewModel() {
-
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate
 
@@ -93,8 +96,8 @@ class DashboardViewModel(
                             gender = gender,
                             goal = goal,
                             offset = offset,
-                            proteinTarget = protein
-                        )
+                            proteinTarget = protein,
+                        ),
                     )
                 }
             }
@@ -104,62 +107,73 @@ class DashboardViewModel(
     private val prefsFlow: Flow<PrefsSnapshot> = userPreferences.snapshot
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val state: StateFlow<DashboardState> = _selectedDate.flatMapLatest { date ->
-        combine(
-            weightDao.getWeightAtDate(date.toString()),
-            profileDao.getProfileAtDate(date.toString()),
-            prefsFlow
-        ) { weightEntry, profileEntry, prefs ->
-            val weightVal = weightEntry?.weight ?: 70f
-            val goal = profileEntry?.goal ?: prefs.goal
-            val offset = profileEntry?.offset ?: prefs.offset
-            val activityLevel = profileEntry?.activityLevel ?: prefs.activityLevel
-            val gender = profileEntry?.gender ?: prefs.gender
-            val age = profileEntry?.age ?: prefs.age
-            val height = profileEntry?.height ?: prefs.height
-            val proteinTarget = profileEntry?.proteinTarget ?: prefs.proteinTarget
+    val state: StateFlow<DashboardState> =
+        _selectedDate
+            .flatMapLatest { date ->
+                combine(
+                    weightDao.getWeightAtDate(date.toString()),
+                    profileDao.getProfileAtDate(date.toString()),
+                    prefsFlow,
+                ) { weightEntry, profileEntry, prefs ->
+                    val weightVal = weightEntry?.weight ?: 70f
+                    val goal = profileEntry?.goal ?: prefs.goal
+                    val offset = profileEntry?.offset ?: prefs.offset
+                    val activityLevel = profileEntry?.activityLevel ?: prefs.activityLevel
+                    val gender = profileEntry?.gender ?: prefs.gender
+                    val age = profileEntry?.age ?: prefs.age
+                    val height = profileEntry?.height ?: prefs.height
+                    val proteinTarget = profileEntry?.proteinTarget ?: prefs.proteinTarget
 
-            val bmr = if (gender == "Male") {
-                10 * weightVal + 6.25 * height - 5 * age + 5
-            } else {
-                10 * weightVal + 6.25 * height - 5 * age - 161
-            }
+                    val bmr =
+                        if (gender == "Male") {
+                            10 * weightVal + 6.25 * height - 5 * age + 5
+                        } else {
+                            10 * weightVal + 6.25 * height - 5 * age - 161
+                        }
 
-            val tdee = bmr * activityLevel
-            val adjustedTarget = when (goal) {
-                "Lose" -> tdee - offset
-                "Gain" -> tdee + offset
-                else -> tdee
-            }
+                    val tdee = bmr * activityLevel
+                    val adjustedTarget =
+                        when (goal) {
+                            "Lose" -> tdee - offset
+                            "Gain" -> tdee + offset
+                            else -> tdee
+                        }
 
-            Triple(adjustedTarget.toInt(), proteinTarget, weightVal)
-        }.flatMapLatest { (targetCal, targetProt, weightVal) ->
-            combine(
-                repository.getEntriesByDate(date),
-                repository.getUniqueRecentEntries()
-            ) { entries, recent ->
-                DashboardState(
-                    selectedDate = date,
-                    entries = entries,
-                    totalCalories = entries.sumOf { it.calories },
-                    totalProtein = entries.sumOf { it.protein },
-                    totalFat = entries.sumOf { it.fat },
-                    totalCarbs = entries.sumOf { it.carbohydrates },
-                    totalFiber = entries.sumOf { it.fiber },
-                    targetCalories = targetCal,
-                    targetProtein = targetProt,
-                    currentWeight = weightVal,
-                    recentEntries = recent
-                )
-            }
-        }.flowOn(Dispatchers.Default)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardState())
+                    Triple(adjustedTarget.toInt(), proteinTarget, weightVal)
+                }.flatMapLatest { (targetCal, targetProt, weightVal) ->
+                    combine(
+                        repository.getEntriesByDate(date),
+                        repository.getUniqueRecentEntries(),
+                    ) { entries, recent ->
+                        DashboardState(
+                            selectedDate = date,
+                            entries = entries,
+                            totalCalories = entries.sumOf { it.calories },
+                            totalProtein = entries.sumOf { it.protein },
+                            totalFat = entries.sumOf { it.fat },
+                            totalCarbs = entries.sumOf { it.carbohydrates },
+                            totalFiber = entries.sumOf { it.fiber },
+                            targetCalories = targetCal,
+                            targetProtein = targetProt,
+                            currentWeight = weightVal,
+                            recentEntries = recent,
+                        )
+                    }
+                }.flowOn(Dispatchers.Default)
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardState())
 
     fun selectDate(date: LocalDate) {
         _selectedDate.value = date
     }
 
-    fun addFood(name: String, kcal: Int, protein: Int, fat: Int = 0, carbs: Int = 0, fiber: Int = 0) {
+    fun addFood(
+        name: String,
+        kcal: Int,
+        protein: Int,
+        fat: Int = 0,
+        carbs: Int = 0,
+        fiber: Int = 0,
+    ) {
         viewModelScope.launch {
             repository.addFoodEntry(
                 FoodEntry(
@@ -169,22 +183,35 @@ class DashboardViewModel(
                     fat = fat,
                     carbohydrates = carbs,
                     fiber = fiber,
-                    date = _selectedDate.value.toString()
-                )
+                    date = _selectedDate.value.toString(),
+                ),
             )
             _scannerState.value = ScannerState.Idle
-            val hour = java.time.LocalTime.now().hour
+            val hour =
+                java.time.LocalTime
+                    .now()
+                    .hour
             if (foodProblemDetector.isProblematic(name, kcal, hour)) {
-                triggerCoach("$name: ${kcal}kcal, ${protein}g protein")
+                val remaining = state.value.targetCalories - state.value.totalCalories - kcal
+                triggerCoach("$name: ${kcal}kcal, ${protein}g protein", remaining)
             }
         }
     }
 
-    private fun triggerCoach(mealLog: String) {
-        val workRequest = OneTimeWorkRequestBuilder<InvisibleCoachWorker>()
-            .setInputData(workDataOf(InvisibleCoachWorker.KEY_MEAL_LOG to mealLog))
-            .build()
-        WorkManager.getInstance(application)
+    private fun triggerCoach(
+        mealLog: String,
+        remainingCalories: Int,
+    ) {
+        val workRequest =
+            OneTimeWorkRequestBuilder<InvisibleCoachWorker>()
+                .setInputData(
+                    workDataOf(
+                        InvisibleCoachWorker.KEY_MEAL_LOG to mealLog,
+                        InvisibleCoachWorker.KEY_REMAINING_CALORIES to remainingCalories,
+                    ),
+                ).build()
+        WorkManager
+            .getInstance(application)
             .enqueueUniqueWork("invisible_coach", ExistingWorkPolicy.REPLACE, workRequest)
     }
 
@@ -199,18 +226,19 @@ class DashboardViewModel(
 
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
-            repository.getProductByBarcode(barcode)
+            repository
+                .getProductByBarcode(barcode)
                 .onSuccess { product ->
-                    _scannerState.value = ScannerState.Success(
-                        name = product.name,
-                        calories100g = product.calories100g,
-                        protein100g = product.protein100g,
-                        fat100g = product.fat100g,
-                        carbohydrates100g = product.carbohydrates100g,
-                        fiber100g = product.fiber100g
-                    )
-                }
-                .onFailure { error ->
+                    _scannerState.value =
+                        ScannerState.Success(
+                            name = product.name,
+                            calories100g = product.calories100g,
+                            protein100g = product.protein100g,
+                            fat100g = product.fat100g,
+                            carbohydrates100g = product.carbohydrates100g,
+                            fiber100g = product.fiber100g,
+                        )
+                }.onFailure { error ->
                     _scannerState.value = ScannerState.Error(error.message ?: "Unknown error")
                 }
         }
@@ -221,19 +249,20 @@ class DashboardViewModel(
 
         _scannerState.value = ScannerState.Loading
         viewModelScope.launch {
-            visionRepository.recognizeFood(bitmap)
+            visionRepository
+                .recognizeFood(bitmap)
                 .onSuccess { result ->
-                    _scannerState.value = ScannerState.Success(
-                        name = result.name,
-                        calories100g = result.calories100g,
-                        protein100g = result.protein100g,
-                        fat100g = result.fat100g,
-                        carbohydrates100g = result.carbohydrates100g,
-                        fiber100g = result.fiber100g,
-                        estimatedWeightGrams = result.estimatedWeightGrams
-                    )
-                }
-                .onFailure { error ->
+                    _scannerState.value =
+                        ScannerState.Success(
+                            name = result.name,
+                            calories100g = result.calories100g,
+                            protein100g = result.protein100g,
+                            fat100g = result.fat100g,
+                            carbohydrates100g = result.carbohydrates100g,
+                            fiber100g = result.fiber100g,
+                            estimatedWeightGrams = result.estimatedWeightGrams,
+                        )
+                }.onFailure { error ->
                     _scannerState.value = ScannerState.Error(error.message ?: "Vision error")
                 }
         }

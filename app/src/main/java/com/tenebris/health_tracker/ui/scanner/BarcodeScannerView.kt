@@ -19,13 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
@@ -35,25 +33,29 @@ import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sin
 
-val SquircleShape = GenericShape { size, _ ->
-    val r = size.width / 2
-    val n = 3.0
-    val points = 100
-    for (i in 0..points) {
-        val angle = (i * 2 * Math.PI / points)
-        val x = r * abs(cos(angle)).pow(2.0 / n) * sign(cos(angle))
-        val y = r * abs(sin(angle)).pow(2.0 / n) * sign(sin(angle))
-        if (i == 0) moveTo(r + x.toFloat(), r + y.toFloat())
-        else lineTo(r + x.toFloat(), r + y.toFloat())
+val SquircleShape =
+    GenericShape { size, _ ->
+        val r = size.width / 2
+        val n = 3.0
+        val points = 100
+        for (i in 0..points) {
+            val angle = (i * 2 * Math.PI / points)
+            val x = r * abs(cos(angle)).pow(2.0 / n) * sign(cos(angle))
+            val y = r * abs(sin(angle)).pow(2.0 / n) * sign(sin(angle))
+            if (i == 0) {
+                moveTo(r + x.toFloat(), r + y.toFloat())
+            } else {
+                lineTo(r + x.toFloat(), r + y.toFloat())
+            }
+        }
+        close()
     }
-    close()
-}
 
 @OptIn(ExperimentalGetImage::class)
 @Composable
 fun BarcodeScannerView(
     onBarcodeScanned: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -61,7 +63,7 @@ fun BarcodeScannerView(
 
     val previewView = remember { PreviewView(context) }
     val scanner = remember { BarcodeScanning.getClient() }
-    
+
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
     var isTorchEnabled by remember { mutableStateOf(false) }
 
@@ -76,27 +78,30 @@ fun BarcodeScannerView(
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
+            val preview =
+                Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
 
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
+            val imageAnalysis =
+                ImageAnalysis
+                    .Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
 
             imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
                 val mediaImage = imageProxy.image
                 if (mediaImage != null) {
                     val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                    scanner.process(image)
+                    scanner
+                        .process(image)
                         .addOnSuccessListener { barcodes ->
                             for (barcode in barcodes) {
                                 barcode.rawValue?.let {
                                     onBarcodeScanned(it)
                                 }
                             }
-                        }
-                        .addOnCompleteListener {
+                        }.addOnCompleteListener {
                             imageProxy.close()
                         }
                 } else {
@@ -108,12 +113,13 @@ fun BarcodeScannerView(
 
             try {
                 cameraProvider.unbindAll()
-                val camera = cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageAnalysis
-                )
+                val camera =
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageAnalysis,
+                    )
                 cameraControl = camera.cameraControl
             } catch (e: Exception) {
                 // Handle error
@@ -122,14 +128,15 @@ fun BarcodeScannerView(
     }
 
     Box(
-        modifier = modifier
-            .size(280.dp)
-            .border(6.dp, MaterialTheme.colorScheme.primary, SquircleShape)
-            .clip(SquircleShape)
+        modifier =
+            modifier
+                .size(280.dp)
+                .border(6.dp, MaterialTheme.colorScheme.primary, SquircleShape)
+                .clip(SquircleShape),
     ) {
         AndroidView(
             factory = { previewView },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Flash Toggle
@@ -138,19 +145,23 @@ fun BarcodeScannerView(
                 isTorchEnabled = !isTorchEnabled
                 cameraControl?.enableTorch(isTorchEnabled)
             },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp)
-                .background(
-                    if (isTorchEnabled) MaterialTheme.colorScheme.primaryContainer 
-                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                    CircleShape
-                )
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp)
+                    .background(
+                        if (isTorchEnabled) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+                        },
+                        CircleShape,
+                    ),
         ) {
             Icon(
                 imageVector = if (isTorchEnabled) Icons.Default.FlashOn else Icons.Default.FlashOff,
                 contentDescription = "Toggle Flash",
-                tint = if (isTorchEnabled) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+                tint = if (isTorchEnabled) MaterialTheme.colorScheme.onPrimaryContainer else Color.White,
             )
         }
     }
