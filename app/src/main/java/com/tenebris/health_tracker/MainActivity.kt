@@ -26,6 +26,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.tenebris.health_tracker.data.pref.UserPreferences
+import com.tenebris.health_tracker.navigation.Route
 import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.dashboard.DashboardScreen
 import com.tenebris.health_tracker.ui.dashboard.DashboardViewModel
@@ -63,15 +64,15 @@ fun HealthTrackerApp() {
 
     NavHost(
         navController = navController,
-        startDestination = if (isOnboarded == true) "main" else "onboarding",
+        startDestination = if (isOnboarded == true) Route.Main.route else Route.Onboarding.route,
         enterTransition = { androidx.compose.animation.EnterTransition.None },
         exitTransition = { androidx.compose.animation.ExitTransition.None },
     ) {
-        composable("onboarding") {
+        composable(Route.Onboarding.route) {
             val onboardingViewModel: OnboardingViewModel = koinViewModel()
             OnboardingScreen(onboardingViewModel)
         }
-        composable("main") {
+        composable(Route.Main.route) {
             MainTabScreen()
         }
     }
@@ -86,19 +87,19 @@ fun MainTabScreen() {
 
     val items =
         listOf(
-            TabItem("dashboard", "Dashboard", Icons.Default.Dashboard),
-            TabItem("progress", "Progress", Icons.AutoMirrored.Filled.ShowChart),
-            TabItem("settings", "Settings", Icons.Default.Settings),
+            TabItem(Route.Dashboard, "Dashboard", Icons.Default.Dashboard),
+            TabItem(Route.Progress, "Progress", Icons.AutoMirrored.Filled.ShowChart),
+            TabItem(Route.Settings, "Settings", Icons.Default.Settings),
         )
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             items.forEach { tab ->
-                val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+                val selected = currentDestination?.hierarchy?.any { it.route == tab.destination.route } == true
                 item(
                     selected = selected,
                     onClick = {
-                        navController.navigate(tab.route) {
+                        navController.navigate(tab.destination.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
@@ -133,21 +134,21 @@ fun MainTabScreen() {
     ) {
         NavHost(
             navController = navController,
-            startDestination = "dashboard",
+            startDestination = Route.Dashboard.route,
             enterTransition = { androidx.compose.animation.EnterTransition.None },
             exitTransition = { androidx.compose.animation.ExitTransition.None },
             modifier = Modifier.fillMaxSize(),
         ) {
-            composable("dashboard") {
+            composable(Route.Dashboard.route) {
                 val dashboardViewModel: DashboardViewModel = koinViewModel()
                 val coachViewModel: CoachViewModel = koinViewModel()
                 DashboardScreen(dashboardViewModel, coachViewModel)
             }
-            composable("progress") {
+            composable(Route.Progress.route) {
                 val progressViewModel: ProgressViewModel = koinViewModel()
                 ProgressScreen(progressViewModel)
             }
-            composable("settings") {
+            composable(Route.Settings.route) {
                 val settingsViewModel: SettingsViewModel = koinViewModel()
                 SettingsScreen(settingsViewModel)
             }
@@ -156,7 +157,7 @@ fun MainTabScreen() {
 }
 
 data class TabItem(
-    val route: String,
+    val destination: Route,
     val label: String,
     val icon: ImageVector,
 )
