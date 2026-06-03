@@ -9,13 +9,16 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.tenebris.health_tracker.data.local.ProfileDao
 import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
 import com.tenebris.health_tracker.data.repository.FoodRepository
+import com.tenebris.health_tracker.data.repository.ProfileRepository
 import com.tenebris.health_tracker.data.repository.VisionRepository
+import com.tenebris.health_tracker.data.repository.WeightRepository
+import com.tenebris.health_tracker.data.service.CalorieCalculator
+import com.tenebris.health_tracker.data.service.CalorieTargets
 import com.tenebris.health_tracker.data.service.FoodProblemDetector
 import com.tenebris.health_tracker.data.worker.InvisibleCoachWorker
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +40,11 @@ data class DashboardState(
     val targetProtein: Int = 150,
     val currentWeight: Float = 70f,
     val recentEntries: List<FoodEntry> = emptyList(),
+)
+
+private data class TargetsWithWeight(
+    val targets: CalorieTargets,
+    val weightKg: Float,
 )
 
 @Stable
@@ -63,10 +71,10 @@ sealed class ScannerState {
 class DashboardViewModel(
     private val repository: FoodRepository,
     private val visionRepository: VisionRepository,
-    private val weightDao: com.tenebris.health_tracker.data.local.WeightDao,
-    private val profileDao: ProfileDao,
+    private val weightRepository: WeightRepository,
+    private val profileRepository: ProfileRepository,
     private val userPreferences: UserPreferences,
-    private val application: android.app.Application,
+    private val workManager: WorkManager,
     private val foodProblemDetector: FoodProblemDetector,
 ) : ViewModel() {
     private val _selectedDate = MutableStateFlow(LocalDate.now())
@@ -77,7 +85,7 @@ class DashboardViewModel(
 
     init {
         viewModelScope.launch {
-            profileDao.getLatestProfile().take(1).collect { latest ->
+            profileRepository.getLatestProfile().take(1).collect { latest ->
                 if (latest == null) {
                     val goal = userPreferences.goal.first()
                     val offset = userPreferences.offset.first()
@@ -87,7 +95,7 @@ class DashboardViewModel(
                     val height = userPreferences.height.first()
                     val protein = userPreferences.proteinTarget.first()
 
-                    profileDao.insertProfile(
+                    profileRepository.upsertProfile(
                         ProfileEntry(
                             date = LocalDate.now().toString(),
                             activityLevel = activity,
@@ -111,8 +119,8 @@ class DashboardViewModel(
         _selectedDate
             .flatMapLatest { date ->
                 combine(
-                    weightDao.getWeightAtDate(date.toString()),
-                    profileDao.getProfileAtDate(date.toString()),
+                    weightRepository.getWeightAtDate(date.toString()),
+                    profileRepository.getProfileAtDate(date.toString()),
                     prefsFlow,
                 ) { weightEntry, profileEntry, prefs ->
                     val weightVal = weightEntry?.weight ?: 70f
@@ -124,23 +132,18 @@ class DashboardViewModel(
                     val height = profileEntry?.height ?: prefs.height
                     val proteinTarget = profileEntry?.proteinTarget ?: prefs.proteinTarget
 
-                    val bmr =
-                        if (gender == "Male") {
-                            10 * weightVal + 6.25 * height - 5 * age + 5
-                        } else {
-                            10 * weightVal + 6.25 * height - 5 * age - 161
-                        }
-
-                    val tdee = bmr * activityLevel
-                    val adjustedTarget =
-                        when (goal) {
-                            "Lose" -> tdee - offset
-                            "Gain" -> tdee + offset
-                            else -> tdee
-                        }
-
-                    Triple(adjustedTarget.toInt(), proteinTarget, weightVal)
-                }.flatMapLatest { (targetCal, targetProt, weightVal) ->
+                    val targets = CalorieCalculator.compute(
+                        weightKg = weightVal,
+                        heightCm = height,
+                        age = age,
+                        gender = gender,
+                        goal = goal,
+                        offset = offset,
+                        activityLevel = activityLevel,
+                        proteinTarget = proteinTarget,
+                    )
+                    TargetsWithWeight(targets, weightVal)
+                }.flatMapLatest { (targets, weightVal) ->
                     combine(
                         repository.getEntriesByDate(date),
                         repository.getUniqueRecentEntries(),
@@ -153,8 +156,8 @@ class DashboardViewModel(
                             totalFat = entries.sumOf { it.fat },
                             totalCarbs = entries.sumOf { it.carbohydrates },
                             totalFiber = entries.sumOf { it.fiber },
-                            targetCalories = targetCal,
-                            targetProtein = targetProt,
+                            targetCalories = targets.adjustedTarget,
+                            targetProtein = targets.proteinTarget,
                             currentWeight = weightVal,
                             recentEntries = recent,
                         )
@@ -210,9 +213,7 @@ class DashboardViewModel(
                         InvisibleCoachWorker.KEY_REMAINING_CALORIES to remainingCalories,
                     ),
                 ).build()
-        WorkManager
-            .getInstance(application)
-            .enqueueUniqueWork("invisible_coach", ExistingWorkPolicy.REPLACE, workRequest)
+        workManager.enqueueUniqueWork("invisible_coach", ExistingWorkPolicy.REPLACE, workRequest)
     }
 
     fun deleteFood(entry: FoodEntry) {

@@ -15,8 +15,11 @@ import com.tenebris.health_tracker.data.remote.FoodVisionService
 import com.tenebris.health_tracker.data.remote.OpenFoodFactsApi
 import com.tenebris.health_tracker.data.repository.CoachRepository
 import com.tenebris.health_tracker.data.repository.FoodRepository
+import com.tenebris.health_tracker.data.repository.ProfileRepository
 import com.tenebris.health_tracker.data.repository.VisionRepository
+import com.tenebris.health_tracker.data.repository.WeightRepository
 import com.tenebris.health_tracker.data.service.CalendarContextResolver
+import com.tenebris.health_tracker.data.service.CalorieCalculator
 import com.tenebris.health_tracker.data.service.DistilBertFoodClassifier
 import com.tenebris.health_tracker.data.service.FoodProblemDetector
 import com.tenebris.health_tracker.data.service.HeuristicFoodProblemDetector
@@ -28,6 +31,7 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import androidx.work.WorkManager
 import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -92,6 +96,14 @@ val coreDataModule =
         // Repositories
         single { FoodRepository(get(), get(), get()) }
         single { VisionRepository(get(), get()) }
+        single { WeightRepository(get()) }
+        single { ProfileRepository(get()) }
+
+        // Domain services
+        single { CalorieCalculator }
+
+        // Android system services
+        single { WorkManager.getInstance(androidApplication()) }
 
         // Services used by workers
         single { TrendAnalyzer(get(), get()) }
