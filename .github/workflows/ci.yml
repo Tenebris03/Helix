@@ -31,7 +31,8 @@ jobs:
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Create secrets for build
-        run: echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > secrets.properties
+        run: |
+          echo "GEMINI_API_KEY=\"${{ secrets.GEMINI_API_KEY }}\"" > secrets.properties
 
       - name: Run linting, tests, and build
         run: ./gradlew ktlintCheck detekt lint test assembleDebug
