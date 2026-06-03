@@ -25,6 +25,25 @@ A minimalist, high-performance health and nutrition tracker inspired by the **No
 
 - **UI**: Jetpack Compose.
 - **Architecture**: MVVM (Model-View-ViewModel) with a Repository pattern.
+- **Module Structure**: Bottom-up layered architecture:
+
+```mermaid
+graph TD
+    app[":app"] --> dashboard[":feature:dashboard"]
+    app --> onboarding[":feature:onboarding"]
+    app --> settings[":feature:settings"]
+    app --> tracking[":feature:tracking"]
+    dashboard --> core_ui[":core:ui"]
+    dashboard --> core_data[":core:data"]
+    onboarding --> core_ui
+    onboarding --> core_data
+    settings --> core_ui
+    settings --> core_data
+    tracking --> core_ui
+    tracking --> core_data
+    core_data --> core_model[":core:model"]
+    core_ui --> core_model
+```
 - **Networking**: Retrofit 3.0 + OkHttp 5 + Kotlinx Serialization.
 - **Local Storage**: Room Database with Write-Ahead-Logging (WAL) and DataStore for user preferences.
 - **ML & Camera**: Google ML Kit Barcode Scanning + CameraX.
