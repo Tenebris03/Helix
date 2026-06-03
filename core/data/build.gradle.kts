@@ -21,6 +21,10 @@ android {
         buildConfig = true
     }
 
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
+
     secrets {
         propertiesFileName = "secrets.properties"
         defaultPropertiesFileName = "secrets.defaults.properties"
