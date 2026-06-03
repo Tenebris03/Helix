@@ -7,16 +7,16 @@ import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.Test
 
 class ArchitectureTest {
-
     private val allModulesScope
-        get() = Konsist.scopeFromProject() +
-            Konsist.scopeFromModule(":core:model") +
-            Konsist.scopeFromModule(":core:data") +
-            Konsist.scopeFromModule(":core:ui") +
-            Konsist.scopeFromModule(":feature:dashboard") +
-            Konsist.scopeFromModule(":feature:onboarding") +
-            Konsist.scopeFromModule(":feature:tracking") +
-            Konsist.scopeFromModule(":feature:settings")
+        get() =
+            Konsist.scopeFromProject() +
+                Konsist.scopeFromModule(":core:model") +
+                Konsist.scopeFromModule(":core:data") +
+                Konsist.scopeFromModule(":core:ui") +
+                Konsist.scopeFromModule(":feature:dashboard") +
+                Konsist.scopeFromModule(":feature:onboarding") +
+                Konsist.scopeFromModule(":feature:tracking") +
+                Konsist.scopeFromModule(":feature:settings")
 
     @Test
     fun `layer dependency rules are respected`() {
