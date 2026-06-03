@@ -32,11 +32,9 @@ jobs:
 
       - name: Create secrets for build
         run: |
-          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then
-            cat > secrets.properties << EOF
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            EOF
-          fi
+          cat > secrets.properties << EOF
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY || 'unset' }}
+          EOF
 
       - name: Run linting, tests, and build
         run: ./gradlew ktlintCheck detekt lint test assembleDebug
