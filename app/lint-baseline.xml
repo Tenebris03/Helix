@@ -2,35 +2,13 @@
 <issues format="6" by="lint 9.2.0" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.0)" variant="all" version="9.2.0">
 
     <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/service/CoachNotificationDispatcher.kt"
-            line="71"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Missing permissions required by Vibrator.vibrate: android.permission.VIBRATE"
-        errorLine1="            vibrator?.vibrate(pattern)"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/service/CoachNotificationDispatcher.kt"
-            line="91"
-            column="13"/>
-    </issue>
-
-    <issue
         id="OldTargetApi"
         message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
         errorLine1="        targetSdk = 36"
         errorLine2="        ~~~~~~~~~~~~~~">
         <location
             file="build.gradle.kts"
-            line="24"
+            line="23"
             column="9"/>
     </issue>
 
@@ -69,6 +47,17 @@
 
     <issue
         id="AndroidGradlePluginVersion"
+        message="A newer version of com.android.library than 9.2.0 is available: 9.2.1"
+        errorLine1="agp = &quot;9.2.0&quot;"
+        errorLine2="      ~~~~~~~">
+        <location
+            file="$HOME/StudioProjects/Calorie-Tracker/gradle/libs.versions.toml"
+            line="2"
+            column="7"/>
+    </issue>
+
+    <issue
+        id="AndroidGradlePluginVersion"
         message="A newer version of com.android.test than 9.2.0 is available: 9.2.1"
         errorLine1="agp = &quot;9.2.0&quot;"
         errorLine2="      ~~~~~~~">
@@ -79,120 +68,10 @@
     </issue>
 
     <issue
-        id="ModifierParameter"
-        message="Modifier parameter should be the first optional parameter"
-        errorLine1="    modifier: Modifier = Modifier,"
-        errorLine2="    ~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/components/GoogleExpressiveComponents.kt"
-            line="69"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 34"
-        errorLine1="                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/service/CoachNotificationDispatcher.kt"
-            line="77"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 34"
-        errorLine1="            dynamicColor &amp;&amp; Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/theme/Theme.kt"
-            line="107"
-            column="29"/>
-    </issue>
-
-    <issue
         id="ObsoleteSdkInt"
         message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
         <location
             file="src/main/res/values-v31"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var baseCalories by remember { mutableStateOf(0) }"
-        errorLine2="                                   ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/dashboard/DashboardScreen.kt"
-            line="525"
-            column="36"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var baseProtein by remember { mutableStateOf(0) }"
-        errorLine2="                                  ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/dashboard/DashboardScreen.kt"
-            line="526"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var baseFat by remember { mutableStateOf(0) }"
-        errorLine2="                              ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/dashboard/DashboardScreen.kt"
-            line="527"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var baseCarbs by remember { mutableStateOf(0) }"
-        errorLine2="                                ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/dashboard/DashboardScreen.kt"
-            line="528"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableIntStateOf` instead of `mutableStateOf`"
-        errorLine1="    var baseFiber by remember { mutableStateOf(0) }"
-        errorLine2="                                ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/dashboard/DashboardScreen.kt"
-            line="529"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
-        errorLine1="    var offset by remember(state.offset) { mutableStateOf(state.offset.toFloat()) }"
-        errorLine2="                                           ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/settings/SettingsScreen.kt"
-            line="32"
-            column="44"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
-        errorLine1="    var activity by remember(state.activityLevel) { mutableStateOf(state.activityLevel) }"
-        errorLine2="                                                    ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/ui/settings/SettingsScreen.kt"
-            line="33"
-            column="53"/>
     </issue>
 
     <issue
@@ -300,39 +179,6 @@
             file="src/main/res/mipmap-mdpi/helix_icon.png"/>
         <location
             file="src/main/res/mipmap-hdpi/helix_icon.png"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `String.toUri` instead?"
-        errorLine1="                Uri.parse("
-        errorLine2="                ^">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/service/CalendarContextResolver.kt"
-            line="33"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        prefs.edit().putString(KEY_API_KEY, key).apply()"
-        errorLine2="        ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/pref/EncryptedStorageManager.kt"
-            line="27"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `SharedPreferences.edit` instead?"
-        errorLine1="        prefs.edit().remove(KEY_API_KEY).apply()"
-        errorLine2="        ~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/tenebris/health_tracker/data/pref/EncryptedStorageManager.kt"
-            line="35"
-            column="9"/>
     </issue>
 
 </issues>
