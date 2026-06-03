@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Health-Tracker"
+rootProject.name = "Helix"
 include(":app")
 include(":baselineprofile")

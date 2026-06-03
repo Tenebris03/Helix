@@ -8,7 +8,7 @@
 
     <style name="Theme.HealthTracker.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/expressive_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_nothing</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="postSplashScreenTheme">@style/Theme.HealthTracker</item>
     </style>

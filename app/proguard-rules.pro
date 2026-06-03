@@ -67,3 +67,6 @@
 # Additional Room safety
 -keep class androidx.room.RoomOpenHelper { *; }
 -keep class androidx.room.RoomDatabase$Builder { *; }
+
+# Keep BuildConfig fields (SHOW_DEV_TOOLS used in Settings)
+-keep class com.tenebris.health_tracker.BuildConfig { *; }
