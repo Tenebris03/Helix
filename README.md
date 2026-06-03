@@ -12,6 +12,7 @@ Personal Android app for logging food, tracking weight, and getting unsolicited 
 ## Module architecture
 
 ```mermaid
+%%{init: {'config': {'securityLevel': 'loose', 'interaction': null}}}%%
 graph LR
     subgraph App Shell
         A[:app]
