@@ -1,78 +1,80 @@
-# Calorie-Tracker 🔴
+# Calorie Tracker
 
-A minimalist, high-performance health and nutrition tracker inspired by the **Nothing OS** aesthetic. Designed to be "snappy," tactile, and distraction-free.
+Personal Android app for logging food, tracking weight, and getting unsolicited Gemini coaching about your lunch choices.
 
-![Nothing Design](https://img.shields.io/badge/Design-Nothing%20OS-black?style=for-the-badge)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.1.0-blue?style=for-the-badge&logo=kotlin)
-![Compose](https://img.shields.io/badge/Jetpack-Compose-green?style=for-the-badge&logo=android)
+## What it does
 
-## 📱 Features
+- **Barcode scanning** — point camera at a product, get nutritional info from Open Food Facts
+- **Manual food log** — add/skip/delete entries, see daily macro totals on gauges
+- **Weight tracking** — log weight, view progress over time
+- **Coach** — after you log something questionable, Gemini judges you via notification
 
-- **Dashboard**: Monitor your daily calorie and protein intake with custom-built Nothing-style tachometer gauges.
-- **Dynamic Profile Ecosystem**: Real-time synchronization of BMR, TDEE, and Protein targets based on your latest weight entries.
-- **Smart Barcode Scanner**:
-    - **Nothing Viewfinder**: Custom square viewfinder with a dashed/dotted border.
-    - **Tactile Feedback**: Haptic "ticks" provide physical confirmation on successful scans.
-    - **Open Food Facts Integration**: Instantly log food by scanning barcodes, powered by the world's largest open food database.
-- **Offline-First Performance**: Recently scanned items are cached locally in Room for instant access, even without an internet connection.
-- **Live Macro Scaling**: Adjust portion sizes in real-time and watch your macros scale instantly before adding them to your log.
-- **Cloud Sync & Backup**:
-    - **Direct Google Drive Backup**: Export and import your database manually via the Storage Access Framework.
-    - **Automated Cloud Backup**: Seamless Android Auto-Backup integration for effortless data recovery.
-- **Minimalist Weight Tracking**: Log your weight with a clean, simple interface and track your progress over time.
-
-## 🛠️ Technical Stack
-
-- **UI**: Jetpack Compose.
-- **Architecture**: MVVM (Model-View-ViewModel) with a Repository pattern.
-- **Module Structure**: Bottom-up layered architecture:
+## Module architecture
 
 ```mermaid
 graph TD
-    app[":app"] --> dashboard[":feature:dashboard"]
-    app --> onboarding[":feature:onboarding"]
-    app --> settings[":feature:settings"]
-    app --> tracking[":feature:tracking"]
-    dashboard --> core_ui[":core:ui"]
-    dashboard --> core_data[":core:data"]
-    onboarding --> core_ui
-    onboarding --> core_data
-    settings --> core_ui
-    settings --> core_data
-    tracking --> core_ui
-    tracking --> core_data
-    core_data --> core_model[":core:model"]
-    core_ui --> core_model
+    app[":app"] --> dash[":feature:dashboard"]
+    app --> track[":feature:tracking"]
+    app --> onb[":feature:onboarding"]
+    app --> sett[":feature:settings"]
+    dash --> ui[":core:ui"]
+    dash --> data[":core:data"]
+    track --> ui
+    track --> data
+    onb --> ui
+    onb --> data
+    sett --> ui
+    sett --> data
+    data --> model[":core:model"]
+    ui --> model
 ```
-- **Networking**: Retrofit 3.0 + OkHttp 5 + Kotlinx Serialization.
-- **Local Storage**: Room Database with Write-Ahead-Logging (WAL) and DataStore for user preferences.
-- **ML & Camera**: Google ML Kit Barcode Scanning + CameraX.
-- **Navigation**: Compose Navigation with a custom "Floating Pill" navigation bar.
-- **Splash Screen**: Android Core Splashscreen API with a custom Nothing-themed animated icon.
 
-## 🎨 Design Philosophy
+- **`:core:model`** — pure Kotlin JVM, zero Android dependencies. Data classes + serialization.
+- **`:core:data`** — Room DB, repositories, Retrofit APIs, WorkManager workers, Gemini integration.
+- **`:core:ui`** — Shared Compose components and theming.
+- **`:feature:*`** — Screens, ViewModels, per-feature Koin modules.
 
-HealthTracker follows **Material 3 Expressive** design language:
-- **M3 Color System**: Full dynamic color support (API 31+), with a warm terracotta seed palette and complete 15-role color scheme for light & dark themes.
-- **System Typography**: Uses `FontFamily.SansSerif` across all 15 M3 type scale styles (ExtraBold `display` sizes, Bold `headline` sizes, Normal `body` sizes).
-- **Expressive Shapes**: Generous rounded corners (8dp/16dp/28dp/38dp) with `ExtraLarge` (38dp) as the default card shape.
-- **Expressive Motion**: Spring-based physics (bouncy gauge arcs, wavy progress indicators) for tactile, responsive interactions.
+## Data flow
 
-## 🚀 Getting Started
+```mermaid
+flowchart LR
+    cam[Camera] --> mlkit[ML Kit Barcode]
+    mlkit --> repo[FoodRepository]
+    repo --> api[Open Food Facts API]
+    repo --> cache[(Room Cache)]
+    repo --> vm[DashboardViewModel]
+    vm --> ui[Dashboard UI]
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/tenebris/healthtracker.git
-   ```
-2. **Open in Android Studio**:
-   Requires **Android Studio Ladybug (2024.2.1)** or newer.
-3. **Build & Run**:
-   Connect a device (Nothing Phone recommended for full haptic effect!) and hit **Run**.
+    foodLog[Manual Entry] --> dao[(Room FoodDao)]
+    dao --> repo
+```
 
-## 🤝 Contributing
+```mermaid
+flowchart LR
+    log[User logs food] --> vm[DashboardViewModel]
+    vm --> detector[FoodProblemDetector]
+    detector --> coach[InvisibleCoachWorker]
+    coach --> gemini[Gemini API]
+    gemini --> notification[Notification]
+```
 
-This project uses the **Open Food Facts API**. If you find a product missing or with incorrect data, please consider contributing directly to the [Open Food Facts](https://world.openfoodfacts.org/) database.
+## What's rough
 
----
+- **OCR food recognition** via Google Vision is unreliable — don't trust it
+- **No meal grouping** — entries are a flat list per day
+- **Coach occasionally tells you to eat a salad while you're eating pizza** — it's AI, not a nutritionist
+- **Single user, single device** — no accounts, no sync
+- **No tests for the ViewModels** — architecture tests exist but business logic is untested
 
-*Designed with 🔴 in Berlin.*
+## Build
+
+Requires Android Studio Ladybug+, JDK 21, Gradle 9.4.
+
+```bash
+# Coach feature needs this (optional — everything else works without it)
+echo "GEMINI_API_KEY=your_key_here" > secrets.properties
+```
+
+## Tech
+
+Kotlin 2.1, Jetpack Compose, Room, Retrofit + Kotlinx Serialization, Koin, WorkManager, CameraX, ML Kit.
