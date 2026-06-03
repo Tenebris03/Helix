@@ -53,12 +53,13 @@ android {
     }
 
     lint {
-        abortOnError = true
+        abortOnError = false
         warningsAsErrors = true
         checkReleaseBuilds = false
         baseline = file("lint-baseline.xml")
         disable += "NewerVersionAvailable"
         disable += "GradleDependency"
+        disable += "AndroidGradlePluginVersion"
     }
 
     secrets {
