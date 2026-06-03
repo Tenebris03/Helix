@@ -25,3 +25,10 @@ dependencyResolutionManagement {
 rootProject.name = "Helix"
 include(":app")
 include(":baselineprofile")
+include(":core:model")
+include(":core:data")
+include(":core:ui")
+include(":feature:dashboard")
+include(":feature:onboarding")
+include(":feature:tracking")
+include(":feature:settings")

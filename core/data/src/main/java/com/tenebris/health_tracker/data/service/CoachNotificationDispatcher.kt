@@ -10,8 +10,6 @@ import android.os.VibrationEffect
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.tenebris.health_tracker.MainActivity
-import com.tenebris.health_tracker.R
 
 object CoachNotificationDispatcher {
     private const val CHANNEL_ID = "invisible_coach"
@@ -45,9 +43,9 @@ object CoachNotificationDispatcher {
         body: String,
     ) {
         val intent =
-            Intent(context, MainActivity::class.java).apply {
+            context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
+            } ?: Intent(context.packageName)
         val pendingIntent =
             PendingIntent.getActivity(
                 context,
@@ -59,7 +57,7 @@ object CoachNotificationDispatcher {
         val notification =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle(headline)
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

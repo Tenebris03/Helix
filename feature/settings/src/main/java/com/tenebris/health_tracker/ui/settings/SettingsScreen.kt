@@ -373,7 +373,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
         }
 
-        if (com.tenebris.health_tracker.BuildConfig.SHOW_DEV_TOOLS) {
+        if (com.tenebris.health_tracker.feature.settings.BuildConfig.SHOW_DEV_TOOLS) {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 "Developer",

@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.baselineprofile)
     alias(libs.plugins.secrets.gradle.plugin)
     alias(libs.plugins.ktlint)
@@ -79,6 +78,15 @@ ktlint {
 }
 
 dependencies {
+    // Module dependencies
+    implementation(project(":core:model"))
+    implementation(project(":core:data"))
+    implementation(project(":core:ui"))
+    implementation(project(":feature:dashboard"))
+    implementation(project(":feature:onboarding"))
+    implementation(project(":feature:tracking"))
+    implementation(project(":feature:settings"))
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
@@ -90,56 +98,18 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.runtime.compose)
-
-    // Retrofit & OkHttp
-    implementation(libs.retrofit.core)
-    implementation(libs.retrofit.serialization)
-    implementation(libs.okhttp.core)
-    implementation(libs.okhttp.logging)
-
-    // Serialization
-    implementation(libs.kotlinx.serialization.json)
-
-    // ML Kit & CameraX
-    implementation(libs.mlkit.barcode.scanning)
-    implementation(libs.mlkit.image.labeling)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
-    implementation(libs.generativeai)
-
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
-
-    // DataStore
-    implementation(libs.datastore.preferences)
-
-    // Navigation
-    implementation(libs.navigation.compose)
-
-// Lifecycle
     implementation(libs.lifecycle.viewmodel.compose)
-    implementation(libs.lifecycle.runtime.compose)
-
-// WorkManager
-    implementation(libs.workmanager.runtime)
-
-// Security
-    implementation(libs.security.crypto)
-
-// Koin DI
+    implementation(libs.navigation.compose)
+    implementation(libs.material3.adaptive.navigation.suite)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation(libs.koin.androidx.workmanager)
-    implementation(libs.material3.adaptive.navigation.suite)
 
     // Baseline Profile
     baselineProfile(project(":baselineprofile"))
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.konsist)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
