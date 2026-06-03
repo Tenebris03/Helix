@@ -89,6 +89,9 @@ Requires Android Studio Ladybug+, JDK 21, Gradle 9.4.
 ```bash
 # Coach feature needs this (optional — everything else works without it)
 echo "GEMINI_API_KEY=your_key_here" > secrets.properties
+
+# Set up pre-commit hooks (lint, detekt, architecture tests)
+git config core.hooksPath .githooks
 ```
 
 ## Tech
