@@ -2,7 +2,7 @@
 .gradle
 /local.properties
 /secrets.properties
-/secrets.defaults.properties
+# /secrets.defaults.properties — committed to repo for CI builds
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

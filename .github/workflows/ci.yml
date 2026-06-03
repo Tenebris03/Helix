@@ -35,9 +35,6 @@ jobs:
           cat > secrets.properties << EOF
           GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           EOF
-          cat > secrets.defaults.properties << EOF
-          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          EOF
 
       - name: Run linting, tests, and build
         run: ./gradlew ktlintCheck detekt lint test assembleDebug
