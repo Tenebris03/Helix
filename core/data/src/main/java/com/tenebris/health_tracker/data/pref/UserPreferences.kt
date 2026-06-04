@@ -31,6 +31,9 @@ class UserPreferences(
         val AGE = intPreferencesKey("age")
         val HEIGHT = intPreferencesKey("height")
 
+        // Goals
+        val TARGET_WEIGHT = floatPreferencesKey("target_weight")
+
         // Coach throttling
         val LAST_COACH_INTERVENTION = longPreferencesKey("last_coach_intervention")
         val COACH_HEADLINE = stringPreferencesKey("coach_headline")
@@ -48,6 +51,7 @@ class UserPreferences(
     val gender: Flow<String> = context.dataStore.data.map { it[GENDER] ?: "Male" }
     val age: Flow<Int> = context.dataStore.data.map { it[AGE] ?: 25 }
     val height: Flow<Int> = context.dataStore.data.map { it[HEIGHT] ?: 170 }
+    val targetWeight: Flow<Float> = context.dataStore.data.map { it[TARGET_WEIGHT] ?: 70f }
 
     val lastCoachIntervention: Flow<Long> = context.dataStore.data.map { it[LAST_COACH_INTERVENTION] ?: 0L }
     val coachHeadline: Flow<String?> = context.dataStore.data.map { it[COACH_HEADLINE] }

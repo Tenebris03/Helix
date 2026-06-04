@@ -68,7 +68,7 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
                         Text("No weight data yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
-                    WeightGraph(entries = state.weightEntries, modifier = Modifier.fillMaxSize())
+                    WeightGraph(entries = state.weightEntries, targetWeight = state.targetWeight, modifier = Modifier.fillMaxSize())
                 }
             }
 
@@ -103,13 +103,14 @@ fun ProgressScreen(viewModel: ProgressViewModel) {
 @Composable
 fun WeightGraph(
     entries: List<WeightEntry>,
+    targetWeight: Float = 70f,
     modifier: Modifier = Modifier,
 ) {
     if (entries.isEmpty()) return
 
     val weights = entries.map { it.weight }
-    val maxWeight = weights.maxOrNull() ?: 100f
-    val minWeight = weights.minOrNull() ?: 0f
+    val maxWeight = maxOf(weights.maxOrNull() ?: 100f, targetWeight + 5f)
+    val minWeight = minOf(weights.minOrNull() ?: 0f, targetWeight - 5f)
 
     val baseline = (minWeight - 5f).coerceAtLeast(0f)
     val topPadding = maxWeight + 5f
@@ -119,6 +120,7 @@ fun WeightGraph(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val errorColor = MaterialTheme.colorScheme.error
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
     Spacer(
@@ -180,6 +182,31 @@ fun WeightGraph(
                                 textPaint.apply { textAlign = android.graphics.Paint.Align.LEFT },
                             )
                         }
+
+                        val targetY = graphHeight - ((targetWeight - baseline) / finalRange * graphHeight)
+                        val dashLength = 8.dp.toPx()
+                        val gapLength = 4.dp.toPx()
+                        var xPos = xAxisPadding
+                        while (xPos < width) {
+                            drawLine(
+                                color = errorColor.copy(alpha = 0.6f),
+                                start = Offset(xPos, targetY),
+                                end = Offset((xPos + dashLength).coerceAtMost(width), targetY),
+                                strokeWidth = strokeWidth2dp,
+                            )
+                            xPos += dashLength + gapLength
+                        }
+
+                        drawContext.canvas.nativeCanvas.drawText(
+                            "Target: ${targetWeight.toInt()} kg",
+                            5.dp.toPx(),
+                            targetY - 8.dp.toPx(),
+                            textPaint.apply {
+                                color = errorColor.copy(alpha = 0.6f).hashCode()
+                                textSize = 10.sp.toPx()
+                                textAlign = android.graphics.Paint.Align.LEFT
+                            },
+                        )
 
                         val path =
                             Path().apply {

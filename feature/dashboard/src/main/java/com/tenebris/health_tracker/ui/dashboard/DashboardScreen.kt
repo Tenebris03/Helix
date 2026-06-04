@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tenebris.health_tracker.data.model.FoodEntry
+import com.tenebris.health_tracker.data.model.MealType
 import com.tenebris.health_tracker.ui.coach.CoachUiState
 import com.tenebris.health_tracker.ui.coach.CoachViewModel
 import com.tenebris.health_tracker.ui.components.*
@@ -90,7 +91,7 @@ fun DashboardContent(
     coachState: CoachUiState = CoachUiState(),
     onDateSelected: (java.time.LocalDate) -> Unit,
     onDeleteFood: (FoodEntry) -> Unit,
-    onAddFood: (String, Int, Int, Int, Int, Int) -> Unit,
+    onAddFood: (String, Int, Int, Int, Int, Int, MealType) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit,
@@ -181,9 +182,12 @@ fun DashboardContent(
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TachometerGauge(
                     caloriesProgress = if (state.targetCalories > 0) state.totalCalories.toFloat() / state.targetCalories else 0f,
-                    proteinProgress = if (state.targetProtein > 0) state.totalProtein.toFloat() / state.targetProtein else 0f,
                     currentCalories = state.totalCalories,
                     targetCalories = state.targetCalories,
+                    totalProtein = state.totalProtein,
+                    totalFat = state.totalFat,
+                    totalCarbs = state.totalCarbs,
+                    totalFiber = state.totalFiber,
                 )
             }
 
@@ -241,13 +245,42 @@ fun DashboardContent(
                 color = MaterialTheme.colorScheme.secondary,
             )
 
+            val grouped = state.entries.groupBy { it.mealType }
+            val mealOrder = listOf(MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER, MealType.SNACK)
+            val mealLabels = mapOf(
+                MealType.BREAKFAST to "Breakfast",
+                MealType.LUNCH to "Lunch",
+                MealType.DINNER to "Dinner",
+                MealType.SNACK to "Snacks",
+            )
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize().testTag("food_list"),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.entries, key = { it.id }) { entry ->
-                    SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
+                mealOrder.forEach { mealType ->
+                    val mealEntries = grouped[mealType].orEmpty()
+                    if (mealEntries.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = mealLabels[mealType] ?: mealType.name,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                            )
+                        }
+                        items(mealEntries, key = { it.id }) { entry ->
+                            SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
+                        }
+                    }
+                }
+                if (state.entries.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                            Text("No entries yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
             }
         }
@@ -271,8 +304,8 @@ fun DashboardContent(
                         SheetType.PreviouslyAdded -> {
                             PreviouslyAddedSheetContent(
                                 recentEntries = state.recentEntries,
-                                onAdd = { entry ->
-                                    onAddFood(entry.name, entry.calories, entry.protein, entry.fat, entry.carbohydrates, entry.fiber)
+                                onAdd = { entry, mealType ->
+                                    onAddFood(entry.name, entry.calories, entry.protein, entry.fat, entry.carbohydrates, entry.fiber, mealType)
                                     showSheet = false
                                 },
                             )
@@ -280,8 +313,8 @@ fun DashboardContent(
                         SheetType.AddFood -> {
                             AddFoodSheetContent(
                                 scannerState = scannerState,
-                                onAdd = { name, kcal, prot, fat, carb, fib ->
-                                    onAddFood(name, kcal, prot, fat, carb, fib)
+                                onAdd = { name, kcal, prot, fat, carb, fib, mealType ->
+                                    onAddFood(name, kcal, prot, fat, carb, fib, mealType)
                                     showSheet = false
                                 },
                                 onBarcodeScanned = onBarcodeScanned,
@@ -401,7 +434,7 @@ enum class SheetType {
 @Composable
 fun PreviouslyAddedSheetContent(
     recentEntries: List<FoodEntry>,
-    onAdd: (FoodEntry) -> Unit,
+    onAdd: (FoodEntry, MealType) -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
@@ -451,7 +484,7 @@ fun PreviouslyAddedSheetContent(
                                 )
                             }
                             FilledIconButton(
-                                onClick = { onAdd(entry) },
+                                onClick = { onAdd(entry, MealType.SNACK) },
                                 modifier = Modifier.size(36.dp),
                                 colors =
                                     IconButtonDefaults.filledIconButtonColors(
@@ -477,7 +510,7 @@ fun PreviouslyAddedSheetContent(
 @Composable
 fun AddFoodSheetContent(
     scannerState: ScannerState,
-    onAdd: (String, Int, Int, Int, Int, Int) -> Unit,
+    onAdd: (String, Int, Int, Int, Int, Int, MealType) -> Unit,
     onBarcodeScanned: (String) -> Unit,
     onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit,
@@ -490,6 +523,7 @@ fun AddFoodSheetContent(
     var fiberInput by remember { mutableStateOf("") }
     var weightInput by remember { mutableStateOf("100") }
 
+    var selectedMealType by remember { mutableStateOf(MealType.SNACK) }
     var showMacros by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -788,6 +822,20 @@ fun AddFoodSheetContent(
                         }
                     }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        MealType.values().forEach { type ->
+                            FilterChip(
+                                selected = selectedMealType == type,
+                                onClick = { selectedMealType = type },
+                                label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+
                     ExpressiveButton(
                         onClick = {
                             val k = kcalInput.toIntOrNull() ?: 0
@@ -795,7 +843,7 @@ fun AddFoodSheetContent(
                             val f = fatInput.toIntOrNull() ?: 0
                             val c = carbInput.toIntOrNull() ?: 0
                             val fib = fiberInput.toIntOrNull() ?: 0
-                            onAdd(name, k, p, f, c, fib)
+                            onAdd(name, k, p, f, c, fib, selectedMealType)
                         },
                         enabled = isAddEnabled,
                         modifier =

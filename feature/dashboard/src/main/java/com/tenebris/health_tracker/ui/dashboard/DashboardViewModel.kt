@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.tenebris.health_tracker.data.model.FoodEntry
+import com.tenebris.health_tracker.data.model.MealType
 import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.pref.UserPreferences
 import com.tenebris.health_tracker.data.pref.UserPreferences.PrefsSnapshot
@@ -176,6 +177,7 @@ class DashboardViewModel(
         fat: Int = 0,
         carbs: Int = 0,
         fiber: Int = 0,
+        mealType: MealType = MealType.SNACK,
     ) {
         viewModelScope.launch {
             repository.addFoodEntry(
@@ -187,6 +189,7 @@ class DashboardViewModel(
                     carbohydrates = carbs,
                     fiber = fiber,
                     date = _selectedDate.value.toString(),
+                    mealType = mealType,
                 ),
             )
             _scannerState.value = ScannerState.Idle

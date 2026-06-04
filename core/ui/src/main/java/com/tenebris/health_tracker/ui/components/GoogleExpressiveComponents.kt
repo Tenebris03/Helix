@@ -154,13 +154,15 @@ fun ExpressiveButton(
 @Composable
 fun TachometerGauge(
     caloriesProgress: Float,
-    proteinProgress: Float,
     currentCalories: Int,
     targetCalories: Int,
+    totalProtein: Int,
+    totalFat: Int,
+    totalCarbs: Int,
+    totalFiber: Int,
     modifier: Modifier = Modifier,
 ) {
     val colorPrimary = MaterialTheme.colorScheme.primary
-    val colorTertiary = MaterialTheme.colorScheme.tertiary
 
     val animatedCalories =
         animateFloatAsState(
@@ -172,29 +174,15 @@ fun TachometerGauge(
                 ),
             label = "caloriesProgress",
         )
-    val animatedProtein =
-        animateFloatAsState(
-            targetValue = proteinProgress.coerceIn(0f, 1f),
-            animationSpec =
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow,
-                ),
-            label = "proteinProgress",
-        )
 
     Box(contentAlignment = Alignment.Center, modifier = modifier) {
         Spacer(
             modifier =
                 Modifier
-                    .size(240.dp)
+                    .size(200.dp)
                     .drawWithCache {
                         val strokeWidth = 20.dp.toPx()
-                        val innerStrokeWidth = 12.dp.toPx()
-                        val backgroundArcColor = colorTertiary.copy(alpha = 0.1f)
-
-                        val innerArcSize = Size(size.width - 60.dp.toPx(), size.height - 60.dp.toPx())
-                        val innerArcOffset = Offset(30.dp.toPx(), 30.dp.toPx())
+                        val backgroundArcColor = colorPrimary.copy(alpha = 0.1f)
 
                         onDrawBehind {
                             drawArc(
@@ -207,32 +195,12 @@ fun TachometerGauge(
                             )
 
                             drawArc(
-                                color = backgroundArcColor,
-                                startAngle = 135f,
-                                sweepAngle = 270f,
-                                useCenter = false,
-                                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                                size = innerArcSize,
-                                topLeft = innerArcOffset,
-                            )
-
-                            drawArc(
                                 color = colorPrimary,
                                 startAngle = 135f,
                                 sweepAngle = 270f * animatedCalories.value,
                                 useCenter = false,
                                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                                 size = size,
-                            )
-
-                            drawArc(
-                                color = colorTertiary,
-                                startAngle = 135f,
-                                sweepAngle = 270f * animatedProtein.value,
-                                useCenter = false,
-                                style = Stroke(width = innerStrokeWidth, cap = StrokeCap.Round),
-                                size = innerArcSize,
-                                topLeft = innerArcOffset,
                             )
                         }
                     },
@@ -250,6 +218,59 @@ fun TachometerGauge(
                 text = "/ $targetCalories kcal",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            MacroRow(
+                protein = totalProtein,
+                fat = totalFat,
+                carbs = totalCarbs,
+                fiber = totalFiber,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MacroRow(
+    protein: Int,
+    fat: Int,
+    carbs: Int,
+    fiber: Int,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        MacroChip(label = "P", value = protein, color = MaterialTheme.colorScheme.primary)
+        MacroChip(label = "F", value = fat, color = MaterialTheme.colorScheme.tertiary)
+        MacroChip(label = "C", value = carbs, color = MaterialTheme.colorScheme.secondary)
+        MacroChip(label = "Fib", value = fiber, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+@Composable
+private fun MacroChip(
+    label: String,
+    value: Int,
+    color: Color,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = color.copy(alpha = 0.15f),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Text(
+                text = "${value}g",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = color,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = color.copy(alpha = 0.7f),
             )
         }
     }

@@ -6,5 +6,5 @@ import org.koin.dsl.module
 
 val trackingModule =
     module {
-        viewModel { ProgressViewModel(get()) }
+        viewModel { ProgressViewModel(get(), get()) }
     }
