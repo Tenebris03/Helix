@@ -12,9 +12,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -35,6 +38,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -56,6 +60,7 @@ fun DashboardScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
     val coachState by coachViewModel.state.collectAsStateWithLifecycle()
+    val editingEntry by viewModel.editingEntry.collectAsStateWithLifecycle()
 
     var isReady by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -79,6 +84,10 @@ fun DashboardScreen(
             onFoodImageCaptured = viewModel::onFoodImageCaptured,
             onResetScanner = viewModel::resetScanner,
             onDismissCoach = coachViewModel::dismiss,
+            editingEntry = editingEntry,
+            onStartEdit = viewModel::startEdit,
+            onSaveEdit = viewModel::saveEdit,
+            onCancelEdit = viewModel::cancelEdit,
         )
     }
 }
@@ -96,6 +105,10 @@ fun DashboardContent(
     onFoodImageCaptured: (Bitmap) -> Unit,
     onResetScanner: () -> Unit,
     onDismissCoach: () -> Unit = {},
+    editingEntry: FoodEntry? = null,
+    onStartEdit: (FoodEntry) -> Unit = {},
+    onSaveEdit: (FoodEntry) -> Unit = {},
+    onCancelEdit: () -> Unit = {},
 ) {
     var showSheet by remember { mutableStateOf(false) }
     var sheetType by remember { mutableStateOf<SheetType>(SheetType.Choice) }
@@ -166,12 +179,6 @@ fun DashboardContent(
                     .padding(padding),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
-            ExpressiveHeader(
-                text = "Dashboard",
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             DatePickerTimeline(
                 selectedDate = state.selectedDate,
@@ -184,10 +191,15 @@ fun DashboardContent(
                     caloriesProgress = if (state.targetCalories > 0) state.totalCalories.toFloat() / state.targetCalories else 0f,
                     currentCalories = state.totalCalories,
                     targetCalories = state.targetCalories,
-                    totalProtein = state.totalProtein,
-                    totalFat = state.totalFat,
-                    totalCarbs = state.totalCarbs,
-                    totalFiber = state.totalFiber,
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                MacroRow(
+                    protein = state.totalProtein,
+                    fat = state.totalFat,
+                    carbs = state.totalCarbs,
+                    fiber = state.totalFiber,
                 )
             }
 
@@ -271,7 +283,7 @@ fun DashboardContent(
                             )
                         }
                         items(mealEntries, key = { it.id }) { entry ->
-                            SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) })
+                            SwipeToDeleteFoodCard(entry = entry, onDelete = { onDeleteFood(entry) }, onClick = { onStartEdit(entry) })
                         }
                     }
                 }
@@ -329,6 +341,23 @@ fun DashboardContent(
                 }
             }
         }
+
+        if (editingEntry != null) {
+            val editSheetState = rememberModalBottomSheetState()
+            ModalBottomSheet(
+                onDismissRequest = onCancelEdit,
+                sheetState = editSheetState,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                shape = RoundedCornerShape(topStart = 38.dp, topEnd = 38.dp),
+                dragHandle = null,
+            ) {
+                EditFoodSheetContent(
+                    entry = editingEntry,
+                    onSave = onSaveEdit,
+                    onCancel = onCancelEdit,
+                )
+            }
+        }
     }
 }
 
@@ -337,6 +366,7 @@ fun DashboardContent(
 fun SwipeToDeleteFoodCard(
     entry: FoodEntry,
     onDelete: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
     val swipeState =
@@ -380,7 +410,7 @@ fun SwipeToDeleteFoodCard(
             }
         },
         content = {
-            FoodCard(entry = entry, onDelete = onDelete)
+            FoodCard(entry = entry, onDelete = onDelete, onClick = onClick)
         },
     )
 }
@@ -389,7 +419,14 @@ fun SwipeToDeleteFoodCard(
 fun FoodCard(
     entry: FoodEntry,
     onDelete: () -> Unit,
+    onClick: () -> Unit = {},
 ) {
+    val timeStr = remember(entry.timestamp) {
+        java.time.LocalTime
+            .ofInstant(java.time.Instant.ofEpochMilli(entry.timestamp), java.time.ZoneId.systemDefault())
+            .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+    }
+
     ElevatedCard(
         shape = MaterialTheme.shapes.large,
         colors =
@@ -397,7 +434,7 @@ fun FoodCard(
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     ) {
         Row(
             modifier =
@@ -408,10 +445,18 @@ fun FoodCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(
-                    text = entry.name,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = entry.name,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = timeStr,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     text = "${entry.calories} kcal • P: ${entry.protein}g • F: ${entry.fat}g • C: ${entry.carbohydrates}g",
                     style = MaterialTheme.typography.bodySmall,
@@ -524,7 +569,7 @@ fun AddFoodSheetContent(
     var weightInput by remember { mutableStateOf("100") }
 
     var selectedMealType by remember { mutableStateOf(MealType.SNACK) }
-    var showMacros by remember { mutableStateOf(false) }
+    var showNutrition by remember { mutableStateOf(false) }
     var showScanner by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -572,7 +617,7 @@ fun AddFoodSheetContent(
             baseCarbs = scannerState.carbohydrates100g
             baseFiber = scannerState.fiber100g
             weightInput = scannerState.estimatedWeightGrams.toString()
-            showMacros = true // Automatically show macros when data is fetched from scanner
+            showNutrition = true
             showScanner = false
         }
     }
@@ -588,7 +633,7 @@ fun AddFoodSheetContent(
     }
 
     val isAddEnabled by remember {
-        derivedStateOf { name.isNotEmpty() && kcalInput.isNotEmpty() && proteinInput.isNotEmpty() }
+        derivedStateOf { name.isNotEmpty() && kcalInput.isNotEmpty() }
     }
 
     Column(
@@ -597,7 +642,8 @@ fun AddFoodSheetContent(
                 .padding(24.dp)
                 .fillMaxWidth()
                 .padding(bottom = 32.dp, top = 16.dp)
-                .animateContentSize(animationSpec = tween(500)),
+                .animateContentSize(animationSpec = tween(500))
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
@@ -768,69 +814,77 @@ fun AddFoodSheetContent(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                         )
-                        ExpressiveTextField(
-                            value = proteinInput,
-                            onValueChange = { proteinInput = it },
-                            label = "Prot (g)",
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
+                    }
+
+                    OutlinedButton(
+                        onClick = { showNutrition = !showNutrition },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = CircleShape,
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.tertiary,
+                            ),
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp).graphicsLayer { rotationZ = if (showNutrition) 45f else 0f },
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(if (showNutrition) "Hide nutrition" else "Add nutrition")
                     }
 
                     AnimatedContent(
-                        targetState = showMacros,
-                        label = "macrosTransition",
+                        targetState = showNutrition,
+                        label = "nutritionTransition",
                     ) { expanded ->
                         if (expanded) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                ExpressiveTextField(
-                                    value = fatInput,
-                                    onValueChange = { fatInput = it },
-                                    label = "Fat (g)",
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                )
-                                ExpressiveTextField(
-                                    value = carbInput,
-                                    onValueChange = { carbInput = it },
-                                    label = "Carb (g)",
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                )
-                                ExpressiveTextField(
-                                    value = fiberInput,
-                                    onValueChange = { fiberInput = it },
-                                    label = "Fib (g)",
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                        } else {
-                            OutlinedButton(
-                                onClick = { showMacros = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = CircleShape,
-                                colors =
-                                    ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.tertiary,
-                                    ),
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Add more macros (Fat, Carbs, Fiber)")
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ExpressiveTextField(
+                                        value = proteinInput,
+                                        onValueChange = { proteinInput = it },
+                                        label = "Prot (g)",
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    ExpressiveTextField(
+                                        value = fatInput,
+                                        onValueChange = { fatInput = it },
+                                        label = "Fat (g)",
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ExpressiveTextField(
+                                        value = carbInput,
+                                        onValueChange = { carbInput = it },
+                                        label = "Carb (g)",
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    ExpressiveTextField(
+                                        value = fiberInput,
+                                        onValueChange = { fiberInput = it },
+                                        label = "Fib (g)",
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                             }
                         }
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         MealType.values().forEach { type ->
                             FilterChip(
                                 selected = selectedMealType == type,
                                 onClick = { selectedMealType = type },
-                                label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall) },
+                                label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
                                 modifier = Modifier.weight(1f),
                             )
                         }
@@ -859,6 +913,134 @@ fun AddFoodSheetContent(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditFoodSheetContent(
+    entry: FoodEntry,
+    onSave: (FoodEntry) -> Unit,
+    onCancel: () -> Unit,
+) {
+    var name by remember(entry) { mutableStateOf(entry.name) }
+    var kcalInput by remember(entry) { mutableStateOf(entry.calories.toString()) }
+    var proteinInput by remember(entry) { mutableStateOf(entry.protein.toString()) }
+    var fatInput by remember(entry) { mutableStateOf(entry.fat.toString()) }
+    var carbInput by remember(entry) { mutableStateOf(entry.carbohydrates.toString()) }
+    var fiberInput by remember(entry) { mutableStateOf(entry.fiber.toString()) }
+    var selectedMealType by remember(entry) { mutableStateOf(entry.mealType) }
+
+    val isSaveEnabled by remember {
+        derivedStateOf { name.isNotEmpty() && kcalInput.isNotEmpty() }
+    }
+
+    Column(
+        modifier = Modifier.padding(24.dp).fillMaxWidth().padding(bottom = 32.dp, top = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            "Edit food",
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+        )
+
+        ExpressiveTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = "Name",
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ExpressiveTextField(
+                value = kcalInput,
+                onValueChange = { kcalInput = it },
+                label = "kcal",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+            ExpressiveTextField(
+                value = proteinInput,
+                onValueChange = { proteinInput = it },
+                label = "Prot (g)",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ExpressiveTextField(
+                value = fatInput,
+                onValueChange = { fatInput = it },
+                label = "Fat (g)",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+            ExpressiveTextField(
+                value = carbInput,
+                onValueChange = { carbInput = it },
+                label = "Carb (g)",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+            ExpressiveTextField(
+                value = fiberInput,
+                onValueChange = { fiberInput = it },
+                label = "Fib (g)",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            MealType.values().forEach { type ->
+                FilterChip(
+                    selected = selectedMealType == type,
+                    onClick = { selectedMealType = type },
+                    label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f).height(56.dp),
+                shape = CircleShape,
+            ) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurface)
+            }
+            ExpressiveButton(
+                onClick = {
+                    val kcal = kcalInput.toIntOrNull() ?: entry.calories
+                    val prot = proteinInput.toIntOrNull() ?: entry.protein
+                    val fat = fatInput.toIntOrNull() ?: entry.fat
+                    val carbs = carbInput.toIntOrNull() ?: entry.carbohydrates
+                    val fib = fiberInput.toIntOrNull() ?: entry.fiber
+                    onSave(
+                        entry.copy(
+                            name = name,
+                            calories = kcal,
+                            protein = prot,
+                            fat = fat,
+                            carbohydrates = carbs,
+                            fiber = fib,
+                            mealType = selectedMealType,
+                        ),
+                    )
+                },
+                enabled = isSaveEnabled,
+                modifier = Modifier.weight(1f).height(56.dp),
+                containerColor = MaterialTheme.colorScheme.tertiary,
+                contentColor = MaterialTheme.colorScheme.onTertiary,
+            ) {
+                Text("Save")
             }
         }
     }

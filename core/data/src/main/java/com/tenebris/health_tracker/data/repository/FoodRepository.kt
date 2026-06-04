@@ -19,6 +19,10 @@ class FoodRepository(
         foodDao.insertEntry(entry)
     }
 
+    suspend fun updateFoodEntry(entry: FoodEntry) {
+        foodDao.updateEntry(entry)
+    }
+
     suspend fun deleteFoodEntry(entry: FoodEntry) {
         foodDao.deleteEntry(entry)
     }

@@ -9,7 +9,7 @@ import com.tenebris.health_tracker.data.model.FoodEntry
 import com.tenebris.health_tracker.data.model.ProfileEntry
 import com.tenebris.health_tracker.data.model.WeightEntry
 
-@Database(entities = [FoodEntry::class, WeightEntry::class, CachedProduct::class, ProfileEntry::class], version = 13, exportSchema = false)
+@Database(entities = [FoodEntry::class, WeightEntry::class, CachedProduct::class, ProfileEntry::class], version = 14, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 

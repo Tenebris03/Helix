@@ -84,6 +84,9 @@ class DashboardViewModel(
     private val _scannerState = MutableStateFlow<ScannerState>(ScannerState.Idle)
     val scannerState: StateFlow<ScannerState> = _scannerState
 
+    private val _editingEntry = MutableStateFlow<FoodEntry?>(null)
+    val editingEntry: StateFlow<FoodEntry?> = _editingEntry
+
     init {
         viewModelScope.launch {
             profileRepository.getLatestProfile().take(1).collect { latest ->
@@ -222,6 +225,21 @@ class DashboardViewModel(
     fun deleteFood(entry: FoodEntry) {
         viewModelScope.launch {
             repository.deleteFoodEntry(entry)
+        }
+    }
+
+    fun startEdit(entry: FoodEntry) {
+        _editingEntry.value = entry
+    }
+
+    fun cancelEdit() {
+        _editingEntry.value = null
+    }
+
+    fun saveEdit(entry: FoodEntry) {
+        viewModelScope.launch {
+            repository.updateFoodEntry(entry)
+            _editingEntry.value = null
         }
     }
 

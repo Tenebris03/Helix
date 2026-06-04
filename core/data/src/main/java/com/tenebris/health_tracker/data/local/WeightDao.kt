@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.tenebris.health_tracker.data.model.WeightEntry
 import kotlinx.coroutines.flow.Flow
 
@@ -24,6 +25,9 @@ interface WeightDao {
 
     @Delete
     suspend fun deleteWeight(entry: WeightEntry)
+
+    @Update
+    suspend fun updateWeight(entry: WeightEntry)
 
     @Query("SELECT * FROM weight_entries WHERE date = :date LIMIT 1")
     suspend fun getWeightByDate(date: String): WeightEntry?

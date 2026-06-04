@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -156,10 +157,6 @@ fun TachometerGauge(
     caloriesProgress: Float,
     currentCalories: Int,
     targetCalories: Int,
-    totalProtein: Int,
-    totalFat: Int,
-    totalCarbs: Int,
-    totalFiber: Int,
     modifier: Modifier = Modifier,
 ) {
     val colorPrimary = MaterialTheme.colorScheme.primary
@@ -219,19 +216,12 @@ fun TachometerGauge(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.secondary,
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            MacroRow(
-                protein = totalProtein,
-                fat = totalFat,
-                carbs = totalCarbs,
-                fiber = totalFiber,
-            )
         }
     }
 }
 
 @Composable
-private fun MacroRow(
+fun MacroRow(
     protein: Int,
     fat: Int,
     carbs: Int,
@@ -255,16 +245,16 @@ private fun MacroChip(
     color: Color,
 ) {
     Surface(
-        shape = MaterialTheme.shapes.small,
+        shape = RoundedCornerShape(12.dp),
         color = color.copy(alpha = 0.15f),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
                 text = "${value}g",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = color,
             )
             Text(

@@ -5,17 +5,21 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.tenebris.health_tracker.data.model.DailyCalorieSum
 import com.tenebris.health_tracker.data.model.FoodEntry
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FoodDao {
-    @Query("SELECT * FROM food_entries WHERE date = :date")
+    @Query("SELECT * FROM food_entries WHERE date = :date ORDER BY timestamp ASC")
     fun getEntriesByDate(date: String): Flow<List<FoodEntry>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: FoodEntry)
+
+    @Update
+    suspend fun updateEntry(entry: FoodEntry)
 
     @Delete
     suspend fun deleteEntry(entry: FoodEntry)

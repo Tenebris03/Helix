@@ -22,4 +22,5 @@ data class FoodEntry(
     val fiber: Int = 0,
     val date: String, // ISO-8601 format yyyy-MM-dd
     val mealType: MealType = MealType.SNACK,
+    val timestamp: Long = System.currentTimeMillis(),
 )

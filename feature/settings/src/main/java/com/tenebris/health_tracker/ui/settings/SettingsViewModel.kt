@@ -23,6 +23,7 @@ data class SettingsState(
     val age: Int = 25,
     val height: Int = 170,
     val latestWeight: Float = 70f,
+    val targetWeight: Float = 70f,
     val apiKey: String = "",
 )
 
@@ -40,7 +41,8 @@ class SettingsViewModel(
         combine(
             userPreferences.snapshot,
             weightDao.getLatestWeightEntry(),
-        ) { prefs, latestWeightEntry ->
+            userPreferences.targetWeight,
+        ) { prefs, latestWeightEntry, targetW ->
 
             val weightVal = latestWeightEntry?.weight ?: 70f
 
@@ -63,6 +65,7 @@ class SettingsViewModel(
                 age = prefs.age,
                 height = prefs.height,
                 latestWeight = weightVal,
+                targetWeight = targetW,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsState())
 
@@ -102,6 +105,12 @@ class SettingsViewModel(
                 ),
             )
             userPreferences.saveOnboardingData(bmr.toInt(), goal, offset, proteinTarget, activityLevel, gender, age, height)
+        }
+    }
+
+    fun updateTargetWeight(weightKg: Float) {
+        viewModelScope.launch {
+            userPreferences.saveTargetWeight(weightKg)
         }
     }
 

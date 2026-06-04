@@ -17,6 +17,8 @@ class WeightRepository(
 
     suspend fun deleteWeight(entry: WeightEntry) = weightDao.deleteWeight(entry)
 
+    suspend fun updateWeight(entry: WeightEntry) = weightDao.updateWeight(entry)
+
     suspend fun getWeightByDate(date: String): WeightEntry? = weightDao.getWeightByDate(date)
 
     suspend fun getAverageWeightSince(startDate: String): Float? = weightDao.getAverageWeightSince(startDate)

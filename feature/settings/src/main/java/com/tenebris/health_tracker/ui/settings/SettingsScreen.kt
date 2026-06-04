@@ -33,6 +33,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     var activity by remember(state.activityLevel) { mutableStateOf(state.activityLevel) }
     var age by remember(state.age) { mutableStateOf(state.age.toString()) }
     var height by remember(state.height) { mutableStateOf(state.height.toString()) }
+    var targetWeightInput by remember(state.targetWeight) { mutableStateOf(state.targetWeight.toString()) }
     var apiKeyInput by remember(apiKey) { mutableStateOf(apiKey) }
 
     val exportLauncher =
@@ -82,12 +83,6 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState()),
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        ExpressiveHeader(
-            text = "Settings",
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         ExpressiveCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -184,6 +179,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                ExpressiveTextField(
+                    value = targetWeightInput,
+                    onValueChange = { targetWeightInput = it },
+                    label = "Target weight (kg)",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
                 ExpressiveButton(
                     onClick = {
                         viewModel.updateSettings(
@@ -194,6 +197,10 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             age = age.toIntOrNull() ?: state.age,
                             height = height.toIntOrNull() ?: state.height,
                         )
+                        val tw = targetWeightInput.toFloatOrNull()
+                        if (tw != null) {
+                            viewModel.updateTargetWeight(tw)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     containerColor = MaterialTheme.colorScheme.tertiary,

@@ -81,6 +81,12 @@ class UserPreferences(
             )
         }
 
+    suspend fun saveTargetWeight(weightKg: Float) {
+        context.dataStore.edit { prefs ->
+            prefs[TARGET_WEIGHT] = weightKg
+        }
+    }
+
     suspend fun saveCoachInterventionTimestamp() {
         context.dataStore.edit { prefs ->
             prefs[LAST_COACH_INTERVENTION] = System.currentTimeMillis()
